@@ -6,6 +6,12 @@ This integration is built on top of the community `pyworxcloud` library and adds
 
 Integration prepared by **Smart Service**.
 
+## Support
+
+If this integration helps you, you can support Smart Service:
+
+[Donate via Revolut](https://revolut.me/smartserwis)
+
 ## Features
 
 - Native Home Assistant `lawn_mower` entity.
