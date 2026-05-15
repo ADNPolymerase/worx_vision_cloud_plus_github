@@ -1,4 +1,4 @@
-﻿# Worx Vision Cloud Plus
+# Worx Vision Cloud PLUS
 
 Integracja wykonana przez Smart Service.
 

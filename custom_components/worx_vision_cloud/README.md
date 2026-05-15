@@ -1,4 +1,4 @@
-# Worx Vision Cloud Plus
+# Worx Vision Cloud PLUS
 
 Custom Home Assistant integration for Worx Landroid Vision / Vision Cloud / RTK mowers.
 

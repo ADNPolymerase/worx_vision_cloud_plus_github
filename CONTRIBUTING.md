@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping improve Worx Vision Cloud Plus.
+Thanks for helping improve Worx Vision Cloud PLUS.
 
 ## Local Checks
 

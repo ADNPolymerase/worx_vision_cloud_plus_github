@@ -1,9 +1,9 @@
 {
-  "title": "Worx Vision Cloud Plus",
+  "title": "Worx Vision Cloud PLUS",
   "config": {
     "step": {
       "user": {
-        "title": "Worx Vision Cloud Plus",
+        "title": "Worx Vision Cloud PLUS",
         "description": "Użyj tego samego logowania co w aplikacji Worx Landroid.",
         "data": {
           "email": "E-mail",

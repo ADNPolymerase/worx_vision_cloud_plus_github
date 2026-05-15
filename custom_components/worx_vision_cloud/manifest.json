@@ -1,16 +1,16 @@
 {
   "domain": "worx_vision_cloud",
-  "name": "Worx Vision Cloud Plus",
+  "name": "Worx Vision Cloud PLUS",
   "after_dependencies": [],
   "codeowners": [
     "@SmartServicePL"
   ],
   "config_flow": true,
   "dependencies": [],
-  "documentation": "https://github.com/SmartServicePL/worx-vision-cloud-plus",
+  "documentation": "https://github.com/SmartServicePL/Worx-Vision-Cloud-PLUS",
   "integration_type": "hub",
   "iot_class": "cloud_push",
-  "issue_tracker": "https://github.com/SmartServicePL/worx-vision-cloud-plus/issues",
+  "issue_tracker": "https://github.com/SmartServicePL/Worx-Vision-Cloud-PLUS/issues",
   "loggers": [
     "pyworxcloud"
   ],

@@ -2,7 +2,7 @@
 
 Before the first GitHub release:
 
-1. Create a repository, for example `worx-vision-cloud-plus`.
+1. Create a repository, for example `Worx-Vision-Cloud-PLUS`.
 2. If the URL differs, update `documentation` and `issue_tracker` in `custom_components/worx_vision_cloud/manifest.json`.
 3. If you want code ownership, add your GitHub username to `codeowners` in `manifest.json`.
 4. Check that no private files were added:

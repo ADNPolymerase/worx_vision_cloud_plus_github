@@ -1,4 +1,4 @@
-# Worx Vision Cloud Plus
+# Worx Vision Cloud PLUS
 
 Custom Home Assistant integration for Worx Landroid Vision / Vision Cloud / RTK mowers.
 
@@ -24,10 +24,10 @@ Integration prepared by **Smart Service**.
 1. Open HACS.
 2. Add this repository as a custom repository.
 3. Select category `Integration`.
-4. Install **Worx Vision Cloud Plus**.
+4. Install **Worx Vision Cloud PLUS**.
 5. Restart Home Assistant.
 6. Go to `Settings > Devices & services > Add integration`.
-7. Search for `Worx Vision Cloud Plus`.
+7. Search for `Worx Vision Cloud PLUS`.
 
 ## Manual Installation
 
