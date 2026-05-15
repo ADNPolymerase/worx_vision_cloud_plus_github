@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.2
+
+- Added root-level HACS brand assets so the repository icon appears in HACS.
+
 ## 0.2.1
 
 - Updated integration brand icon and logo assets.
