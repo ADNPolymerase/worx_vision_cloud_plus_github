@@ -6,7 +6,10 @@ from datetime import UTC, datetime, timedelta
 import logging
 from typing import Any
 
+from aiohttp import ClientError, ClientTimeout
+
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from pyworxcloud import DeviceHandler, LandroidEvent, WorxCloud
@@ -17,6 +20,13 @@ from .const import DOMAIN
 _LOGGER = logging.getLogger(__name__)
 
 RTK_MAP_CACHE_TTL = timedelta(minutes=30)
+RTK_ADDRESS_CACHE_TTL = timedelta(hours=24)
+RTK_ADDRESS_COORD_PRECISION = 3
+RTK_ADDRESS_ENDPOINT = "https://nominatim.openstreetmap.org/reverse"
+RTK_ADDRESS_USER_AGENT = (
+    "Worx Vision Cloud PLUS Home Assistant custom integration "
+    "(https://github.com/SmartServicePL/Worx-Vision-Cloud-PLUS)"
+)
 PRODUCT_ITEM_CACHE_TTL = timedelta(minutes=5)
 
 
@@ -44,7 +54,10 @@ class WorxVisionCoordinator(DataUpdateCoordinator[dict[str, DeviceHandler]]):
         )
         self.cloud = cloud
         self._event_lock = asyncio.Lock()
+        self._rtk_address_lock = asyncio.Lock()
+        self._last_rtk_address_lookup: datetime | None = None
         self._rtk_map_cache: dict[str, tuple[datetime, dict[str, Any]]] = {}
+        self._rtk_address_cache: dict[str, tuple[datetime, dict[str, Any]]] = {}
         self._product_item_cache: dict[str, tuple[datetime, dict[str, Any]]] = {}
 
     async def async_setup(self) -> None:
@@ -180,6 +193,99 @@ class WorxVisionCoordinator(DataUpdateCoordinator[dict[str, DeviceHandler]]):
             return None
         cached = self._rtk_map_cache.get(map_id)
         return None if cached is None else cached[1]
+
+    async def async_reverse_geocode_rtk_position(
+        self, position: tuple[float, float] | None, *, force: bool = False
+    ) -> dict[str, Any] | None:
+        """Return a cached reverse-geocoded address for an RTK position."""
+        if position is None:
+            return None
+
+        cache_key = self.rtk_address_cache_key(position)
+        now = datetime.now(UTC)
+        cached = self._rtk_address_cache.get(cache_key)
+        if (
+            cached is not None
+            and not force
+            and now - cached[0] < RTK_ADDRESS_CACHE_TTL
+        ):
+            return cached[1]
+
+        async with self._rtk_address_lock:
+            cached = self._rtk_address_cache.get(cache_key)
+            if (
+                cached is not None
+                and not force
+                and now - cached[0] < RTK_ADDRESS_CACHE_TTL
+            ):
+                return cached[1]
+
+            lookup_latitude, lookup_longitude = self.rtk_address_lookup_position(position)
+            await self._throttle_rtk_address_lookup()
+
+            session = async_get_clientsession(self.hass)
+            params = {
+                "format": "jsonv2",
+                "lat": f"{lookup_latitude:.{RTK_ADDRESS_COORD_PRECISION}f}",
+                "lon": f"{lookup_longitude:.{RTK_ADDRESS_COORD_PRECISION}f}",
+                "zoom": "18",
+                "addressdetails": "1",
+                "accept-language": self.hass.config.language or "en",
+            }
+            headers = {
+                "User-Agent": RTK_ADDRESS_USER_AGENT,
+                "Accept": "application/json",
+            }
+
+            try:
+                async with session.get(
+                    RTK_ADDRESS_ENDPOINT,
+                    params=params,
+                    headers=headers,
+                    timeout=ClientTimeout(total=10),
+                ) as response:
+                    if response.status == 429 and cached is not None:
+                        _LOGGER.debug(
+                            "Nominatim rate-limited address lookup; using cache"
+                        )
+                        return cached[1]
+                    response.raise_for_status()
+                    address_data = await response.json()
+            except (ClientError, TimeoutError, ValueError):
+                _LOGGER.debug("Could not reverse-geocode RTK position", exc_info=True)
+                return cached[1] if cached is not None else None
+
+        if isinstance(address_data, dict):
+            self._rtk_address_cache[cache_key] = (now, address_data)
+            return address_data
+
+        return cached[1] if cached is not None else None
+
+    @staticmethod
+    def rtk_address_cache_key(position: tuple[float, float]) -> str:
+        """Return a privacy-friendlier cache key for RTK address lookups."""
+        latitude, longitude = WorxVisionCoordinator.rtk_address_lookup_position(position)
+        return (
+            f"{latitude:.{RTK_ADDRESS_COORD_PRECISION}f},"
+            f"{longitude:.{RTK_ADDRESS_COORD_PRECISION}f}"
+        )
+
+    @staticmethod
+    def rtk_address_lookup_position(position: tuple[float, float]) -> tuple[float, float]:
+        """Return rounded coordinates used for reverse-geocoding."""
+        return (
+            round(position[0], RTK_ADDRESS_COORD_PRECISION),
+            round(position[1], RTK_ADDRESS_COORD_PRECISION),
+        )
+
+    async def _throttle_rtk_address_lookup(self) -> None:
+        """Keep public reverse-geocoding requests below one request per second."""
+        if self._last_rtk_address_lookup is not None:
+            elapsed = datetime.now(UTC) - self._last_rtk_address_lookup
+            remaining = 1 - elapsed.total_seconds()
+            if remaining > 0:
+                await asyncio.sleep(remaining)
+        self._last_rtk_address_lookup = datetime.now(UTC)
 
     def _schedule_push_update(self, device: DeviceHandler) -> None:
         """Schedule a pushed device update on HA loop."""

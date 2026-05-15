@@ -1,6 +1,7 @@
 """Sensor platform for Worx Vision Cloud Plus."""
 from __future__ import annotations
 
+from asyncio import Task
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any, Callable
@@ -22,7 +23,7 @@ from homeassistant.const import (
     UnitOfTemperature,
     UnitOfTime,
 )
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
@@ -35,12 +36,14 @@ from .const import (
 )
 from .entity import WorxVisionEntity
 from .helpers import (
+    MAX_STRING_STATE_LENGTH,
     get_dict_value,
     raw_entity_path_map,
     raw_entity_values,
     raw_path_enabled_default,
     rtk_map_attributes,
     rtk_map_id,
+    rtk_position,
     schedule_attributes,
     schedule_summary,
 )
@@ -153,6 +156,92 @@ def _remaining_progress(device):
     if progress is None:
         return None
     return round(max(0, 100 - progress), 1)
+
+
+def _first_address_text(address: dict[str, Any], *keys: str) -> str | None:
+    """Return the first non-empty text value from an address dict."""
+    for key in keys:
+        value = address.get(key)
+        if value:
+            return str(value)
+    return None
+
+
+def _short_rtk_address(address_data: dict[str, Any] | None) -> str | None:
+    """Return a readable address short enough for a Home Assistant state."""
+    if not isinstance(address_data, dict):
+        return None
+
+    address = address_data.get("address")
+    if not isinstance(address, dict):
+        address = {}
+
+    road = _first_address_text(address, "road", "pedestrian", "footway", "path")
+    house_number = _first_address_text(address, "house_number")
+    if road and house_number:
+        street = f"{road} {house_number}"
+    else:
+        street = road or house_number
+
+    locality = _first_address_text(
+        address,
+        "city",
+        "town",
+        "village",
+        "municipality",
+        "suburb",
+        "hamlet",
+        "county",
+    )
+    postcode = _first_address_text(address, "postcode")
+    country = _first_address_text(address, "country")
+
+    city_line = " ".join(part for part in (postcode, locality) if part)
+    parts = [part for part in (street, city_line, country) if part]
+    if not parts:
+        display_name = address_data.get("display_name")
+        if display_name:
+            parts = [str(display_name)]
+
+    value = ", ".join(dict.fromkeys(parts))
+    if not value:
+        return None
+    return value[:MAX_STRING_STATE_LENGTH]
+
+
+def _rtk_address_attributes(
+    address_data: dict[str, Any] | None, lookup_time: datetime | None
+) -> dict[str, Any] | None:
+    """Return structured address metadata from Nominatim."""
+    if not isinstance(address_data, dict):
+        return None
+
+    address = address_data.get("address")
+    if not isinstance(address, dict):
+        address = {}
+
+    attrs = {
+        "provider": "OpenStreetMap Nominatim",
+        "display_name": address_data.get("display_name"),
+        "category": address_data.get("category"),
+        "type": address_data.get("type"),
+        "osm_type": address_data.get("osm_type"),
+        "osm_id": address_data.get("osm_id"),
+        "place_id": address_data.get("place_id"),
+        "road": _first_address_text(address, "road", "pedestrian", "footway", "path"),
+        "house_number": _first_address_text(address, "house_number"),
+        "postcode": _first_address_text(address, "postcode"),
+        "city": _first_address_text(address, "city", "town", "village", "municipality"),
+        "suburb": _first_address_text(address, "suburb", "hamlet"),
+        "county": _first_address_text(address, "county"),
+        "state": _first_address_text(address, "state"),
+        "country": _first_address_text(address, "country"),
+        "country_code": _first_address_text(address, "country_code"),
+        "attribution": address_data.get("licence"),
+        "lookup_time": lookup_time.isoformat() if lookup_time else None,
+        "privacy_note": "Entity disabled by default; enabling it sends rounded RTK coordinates to Nominatim.",
+    }
+    return {key: value for key, value in attrs.items() if value is not None}
 
 
 STANDARD_SENSORS: tuple[WorxSensorDescription, ...] = (
@@ -384,6 +473,7 @@ async def async_setup_entry(
             WorxVisionSensor(coordinator, entry, serial_number, description)
             for description in STANDARD_SENSORS
         )
+        entities.append(WorxVisionAddressSensor(coordinator, entry, serial_number))
 
     def add_raw_entities() -> None:
         raw_entities: list[SensorEntity] = []
@@ -445,6 +535,87 @@ class WorxVisionSensor(WorxVisionEntity, SensorEntity):
             return None
         attrs = self.entity_description.attrs_fn(self.device)
         return {key: value for key, value in (attrs or {}).items() if value is not None}
+
+
+class WorxVisionAddressSensor(WorxVisionEntity, SensorEntity):
+    """Reverse-geocoded RTK address sensor."""
+
+    _attr_translation_key = "rtk_address"
+    _attr_icon = "mdi:map-marker-account"
+    _attr_entity_registry_enabled_default = False
+
+    def __init__(self, coordinator, entry, serial_number: str) -> None:
+        """Initialize address sensor."""
+        super().__init__(coordinator, entry, serial_number, "rtk_address")
+        self._address_data: dict[str, Any] | None = None
+        self._address_cache_key: str | None = None
+        self._address_lookup_time: datetime | None = None
+        self._address_task: Task | None = None
+
+    async def async_added_to_hass(self) -> None:
+        """Schedule the first address lookup when the enabled entity is added."""
+        await super().async_added_to_hass()
+        self._schedule_address_lookup()
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Cancel an in-flight lookup when Home Assistant removes the entity."""
+        if self._address_task is not None:
+            self._address_task.cancel()
+        await super().async_will_remove_from_hass()
+
+    @property
+    def available(self) -> bool:
+        """Return entity availability."""
+        return super().available and rtk_position(self.device) is not None
+
+    @property
+    def native_value(self) -> str | None:
+        """Return the short reverse-geocoded address."""
+        return _short_rtk_address(self._address_data)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        """Return structured address attributes."""
+        return _rtk_address_attributes(self._address_data, self._address_lookup_time)
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Refresh address when RTK position changes enough to need a new lookup."""
+        self._schedule_address_lookup()
+        super()._handle_coordinator_update()
+
+    def _schedule_address_lookup(self) -> None:
+        """Schedule reverse-geocoding if the rounded RTK position changed."""
+        if not self.hass or not self.available:
+            return
+
+        position = rtk_position(self.device)
+        if position is None:
+            return
+
+        cache_key = self.coordinator.rtk_address_cache_key(position)
+        if self._address_data is not None and self._address_cache_key == cache_key:
+            return
+
+        if self._address_task is not None and not self._address_task.done():
+            return
+
+        self._address_task = self.hass.async_create_task(
+            self._async_lookup_address(position, cache_key)
+        )
+
+    async def _async_lookup_address(
+        self, position: tuple[float, float], cache_key: str
+    ) -> None:
+        """Look up and store a reverse-geocoded address."""
+        address_data = await self.coordinator.async_reverse_geocode_rtk_position(position)
+        if address_data is None:
+            return
+
+        self._address_data = address_data
+        self._address_cache_key = cache_key
+        self._address_lookup_time = datetime.now(UTC)
+        self.async_write_ha_state()
 
 
 class WorxVisionRawSensor(WorxVisionEntity, SensorEntity):

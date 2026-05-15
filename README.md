@@ -21,6 +21,7 @@ If this integration helps you, you can support Smart Service:
 - Schedule sensor and Home Assistant calendar entity.
 - RTK map camera rendered from the Worx private map API.
 - RTK robot position as a `device_tracker`.
+- Optional RTK address sensor using OpenStreetMap Nominatim reverse geocoding, disabled by default.
 - Daily mowing progress, remaining progress and mowed area sensors when available from the API.
 - Polish and English translations.
 - Optional raw payload entities for debugging, disabled by default.
@@ -90,9 +91,15 @@ The map can include:
 
 The map is not a video stream. It updates when Home Assistant receives new data from Worx Cloud or when the integration refreshes cached API data.
 
+## RTK Address
+
+The integration includes a disabled-by-default `RTK address` sensor. When enabled, it reverse-geocodes the mower's rounded RTK coordinates with OpenStreetMap Nominatim and caches the result for 24 hours.
+
+Enable this entity only if you accept sending approximate mower coordinates to the reverse-geocoding provider. This is intentionally opt-in because RTK coordinates can reveal a home or garden location. Lookups are rounded, cached and throttled to respect the public Nominatim service.
+
 ## Privacy
 
-RTK maps can contain precise garden geometry and coordinates. Do not publish debug dumps, Home Assistant storage files, access tokens, serial numbers or raw API responses.
+RTK maps and address lookups can contain precise garden geometry and coordinates. Do not publish debug dumps, Home Assistant storage files, access tokens, serial numbers, raw API responses or screenshots showing exact locations.
 
 Before opening an issue, remove private data from logs and screenshots. See [SECURITY.md](SECURITY.md).
 

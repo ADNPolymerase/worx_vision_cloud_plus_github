@@ -60,6 +60,9 @@
       "rtk_map": {
         "name": "Mapa RTK"
       },
+      "rtk_address": {
+        "name": "Adres RTK"
+      },
       "rain_delay": {
         "name": "Opóźnienie po deszczu"
       },

@@ -11,6 +11,7 @@ Do not publish:
 - raw Home Assistant `.storage` files
 - raw API dumps
 - RTK map payloads with coordinates
+- reverse-geocoded address data
 - screenshots that reveal exact home/garden location
 
 ## Reporting Issues

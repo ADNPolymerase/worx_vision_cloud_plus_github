@@ -60,6 +60,9 @@
       "rtk_map": {
         "name": "RTK map"
       },
+      "rtk_address": {
+        "name": "RTK address"
+      },
       "rain_delay": {
         "name": "Rain delay"
       },

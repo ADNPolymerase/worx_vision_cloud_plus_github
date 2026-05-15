@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.0
+
+- Added disabled-by-default RTK address sensor using OpenStreetMap Nominatim reverse geocoding.
+- Added 24-hour address lookup cache, rounded-coordinate lookups and a one-request-per-second geocoding throttle.
+
 ## 0.1.0
 
 - Initial public release.

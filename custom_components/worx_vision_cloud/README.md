@@ -11,6 +11,7 @@ Main features:
 - mowing schedule calendar
 - RTK map camera
 - RTK robot position tracker
+- optional RTK address sensor, disabled by default
 - daily progress and mowed area sensors when available
 - Polish and English translations
 
