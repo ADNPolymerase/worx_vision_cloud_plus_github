@@ -23,7 +23,7 @@ If this integration helps you, you can support Smart Service:
 - RTK robot position as a `device_tracker`.
 - Optional RTK address sensor using OpenStreetMap Nominatim reverse geocoding, disabled by default.
 - Daily mowing progress, remaining progress and mowed area sensors when available from the API.
-- Smart mowing schedule blueprint driven by grass growth, lawn area and weather sensors.
+- Separate smart mowing automation blueprint repository.
 - Polish and English translations.
 - Optional raw payload entities for debugging, disabled by default.
 
@@ -79,19 +79,13 @@ The exact entity list depends on what your mower reports. Typical entities inclu
 
 See [docs/entities.md](docs/entities.md) for a more detailed list.
 
-## Smart Mowing Schedule
+## Automations
 
-The repository includes a Home Assistant automation blueprint for an intelligent mower schedule:
+Home Assistant blueprints and automations are maintained in a separate repository:
 
-[![Open your Home Assistant instance and import this blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FSmartServicePL%2Fworx_vision_cloud_plus_github%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fworx_vision_cloud_plus%2Fsmart_mowing_schedule.yaml)
+[SmartServicePL/worx_vision_cloud_plus_automation](https://github.com/SmartServicePL/worx_vision_cloud_plus_automation)
 
-```text
-blueprints/automation/worx_vision_cloud_plus/smart_mowing_schedule.yaml
-```
-
-It estimates grass growth from garden temperature, rain/weather, optional soil moisture and sunlight/UV, then chooses mowing runtime from the lawn area and selected WORX mower model. You can use normal Home Assistant sensors or a `weather` entity; 24 h statistics sensors are optional for better accuracy. If there is no soil moisture probe, the blueprint estimates virtual soil moisture from rain and temperature. An optional `input_datetime` helper can show the next calculated mowing slot on a dashboard. See [docs/smart-mowing-schedule.md](docs/smart-mowing-schedule.md) for setup and tuning notes.
-
-Disable the mowing schedule in the WORX app before using this blueprint, so Home Assistant is the only scheduler controlling mower starts.
+The smart mowing schedule blueprint lives there, together with its setup guide and the **My Home Assistant** import button.
 
 ## RTK Map
 

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.2
+
+- Moved Smart mowing schedule blueprint to a separate automation repository.
+- Updated documentation to link to the separated automation repository.
+
 ## 0.3.1
 
 - Added Smart mowing schedule Home Assistant blueprint.
