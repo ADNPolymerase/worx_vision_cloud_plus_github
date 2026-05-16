@@ -12,7 +12,7 @@ Main features:
 - RTK map camera
 - RTK robot position tracker
 - optional RTK address sensor, disabled by default
-- edge cutting and hedgehog-related diagnostics
+- edge cutting and hedgehog protection switches
 - blade runtime reset button
 - daily progress and mowed area sensors when available
 - Polish and English translations

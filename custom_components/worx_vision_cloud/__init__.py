@@ -13,6 +13,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_EMAIL, CONF_PASSWORD
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
+from homeassistant.helpers import entity_registry as er
 
 from pyworxcloud import WorxCloud
 from pyworxcloud.exceptions import AuthorizationError, TooManyRequestsError
@@ -79,6 +80,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         await _safe_disconnect(cloud)
         raise ConfigEntryNotReady("No cloud mower found on this Worx/Landroid account")
 
+    _async_migrate_entity_registry(hass, coordinator.data)
+
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = WorxVisionRuntimeData(
         cloud=cloud,
         coordinator=coordinator,
@@ -121,3 +124,29 @@ async def _safe_disconnect(cloud: WorxCloud) -> None:
         await cloud.disconnect()
     except Exception:  # noqa: BLE001
         _LOGGER.debug("Ignoring error while disconnecting Worx cloud", exc_info=True)
+
+
+def _async_migrate_entity_registry(hass: HomeAssistant, devices: dict) -> None:
+    """Clean up entity registry changes introduced by newer entity names."""
+    registry = er.async_get(hass)
+    for serial_number in devices:
+        distance_entity_id = registry.async_get_entity_id(
+            "sensor", DOMAIN, f"{serial_number}_distance_driven_total"
+        )
+        if distance_entity_id is not None:
+            registry.async_remove(distance_entity_id)
+
+        rain_entity_id = registry.async_get_entity_id(
+            "binary_sensor", DOMAIN, f"{serial_number}_rain_triggered"
+        )
+        if (
+            rain_entity_id is not None
+            and rain_entity_id.endswith("_czujnik_deszczu_aktywny")
+        ):
+            new_entity_id = rain_entity_id.removesuffix(
+                "czujnik_deszczu_aktywny"
+            ) + "czujnik_opadow_deszczu"
+            if registry.async_get(new_entity_id) is None:
+                registry.async_update_entity(
+                    rain_entity_id, new_entity_id=new_entity_id
+                )

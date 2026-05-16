@@ -9,6 +9,7 @@
     "device_tracker",
     "sensor",
     "binary_sensor",
+    "switch",
     "button"
   ],
   "iot_class": "Cloud Push"

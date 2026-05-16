@@ -84,9 +84,6 @@
       "blade_runtime_current": {
         "name": "Czas pracy noży bieżący"
       },
-      "distance_driven_total": {
-        "name": "Przejechany dystans razem"
-      },
       "mower_runtime_total": {
         "name": "Czas pracy kosiarki razem"
       },
@@ -114,7 +111,7 @@
         "name": "Ładowanie baterii"
       },
       "rain_triggered": {
-        "name": "Czujnik deszczu aktywny"
+        "name": "Czujnik opadów deszczu"
       },
       "off_limits_enabled": {
         "name": "Off Limits aktywne"
@@ -129,13 +126,24 @@
         "name": "Tryb pauzy aktywny"
       },
       "smart_edge_cut": {
-        "name": "Inteligentne przycinanie krawędzi"
+        "name": "Inteligentne cięcie krawędziowe"
       },
       "save_hedgehogs": {
-        "name": "Uratuj jeże"
+        "name": "Ochrona jeży"
       },
       "schedule_border_cut": {
-        "name": "Procedura krawędzi harmonogramu"
+        "name": "Procedura krawędzi"
+      }
+    },
+    "switch": {
+      "smart_edge_cut": {
+        "name": "Inteligentne cięcie krawędziowe"
+      },
+      "save_hedgehogs": {
+        "name": "Ochrona jeży"
+      },
+      "schedule_border_cut": {
+        "name": "Procedura krawędzi"
       }
     },
     "button": {

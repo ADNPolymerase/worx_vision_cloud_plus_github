@@ -84,9 +84,6 @@
       "blade_runtime_current": {
         "name": "Blade runtime current"
       },
-      "distance_driven_total": {
-        "name": "Distance driven total"
-      },
       "mower_runtime_total": {
         "name": "Mower runtime total"
       },
@@ -128,6 +125,17 @@
       "pause_mode_enabled": {
         "name": "Pause mode enabled"
       },
+      "smart_edge_cut": {
+        "name": "Smart edge cutting"
+      },
+      "save_hedgehogs": {
+        "name": "Save the hedgehogs"
+      },
+      "schedule_border_cut": {
+        "name": "Schedule edge procedure"
+      }
+    },
+    "switch": {
       "smart_edge_cut": {
         "name": "Smart edge cutting"
       },

@@ -19,7 +19,6 @@ from homeassistant.const import (
     SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
     UnitOfArea,
     UnitOfElectricPotential,
-    UnitOfLength,
     UnitOfTemperature,
     UnitOfTime,
 )
@@ -399,15 +398,6 @@ STANDARD_SENSORS: tuple[WorxSensorDescription, ...] = (
         device_class=SensorDeviceClass.DURATION,
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda d: _blades(d, "current_on"),
-    ),
-    WorxSensorDescription(
-        key="distance_driven_total",
-        translation_key="distance_driven_total",
-        native_unit_of_measurement=UnitOfLength.METERS,
-        device_class=SensorDeviceClass.DISTANCE,
-        state_class=SensorStateClass.TOTAL_INCREASING,
-        entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda d: _statistics(d, "distance"),
     ),
     WorxSensorDescription(
         key="mower_runtime_total",

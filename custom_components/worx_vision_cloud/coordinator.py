@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 from datetime import UTC, datetime, timedelta
+import json
 import logging
 from typing import Any
 
@@ -113,6 +114,57 @@ class WorxVisionCoordinator(DataUpdateCoordinator[dict[str, DeviceHandler]]):
             await self.cloud.update(serial_number, timeout=timeout)
         finally:
             await self.async_request_refresh()
+
+    async def async_set_cut_over_border(
+        self, serial_number: str, enabled: bool
+    ) -> None:
+        """Persist whether Vision border cutting may cross the lawn border."""
+        set_cut_over_border = getattr(self.cloud, "set_cut_over_border", None)
+        if set_cut_over_border is not None:
+            await set_cut_over_border(serial_number, enabled)
+        else:
+            await self._async_send_cut_over_border(serial_number, enabled)
+
+        self._update_cached_cut_over_border(serial_number, enabled)
+        await self.async_request_device_update(serial_number)
+
+    async def _async_send_cut_over_border(
+        self, serial_number: str, enabled: bool
+    ) -> None:
+        """Send the observed Vision Cloud border-cut payload for pyworxcloud 6.3.x."""
+        mower = self.cloud.get_mower(serial_number)
+        if mower.get("protocol") != 1:
+            raise ValueError(
+                "Intelligent edge cutting is only supported for protocol 1 devices"
+            )
+
+        payload = {
+            "mz": {
+                "s": [
+                    {
+                        "id": 1,
+                        "c": 1,
+                        "cfg": {"cut": {"ob": 1 if enabled else 0}},
+                    }
+                ],
+                "p": [],
+            }
+        }
+        await self.cloud.send(serial_number, json.dumps(payload))
+
+    def _update_cached_cut_over_border(
+        self, serial_number: str, enabled: bool
+    ) -> None:
+        """Update local cached raw config so the switch state changes immediately."""
+        device = (self.data or {}).get(serial_number)
+        if device is None:
+            return
+
+        raw_cfg = getattr(device, "raw_cfg", None)
+        if isinstance(raw_cfg, dict):
+            cut = raw_cfg.setdefault("cut", {})
+            if isinstance(cut, dict):
+                cut["ob"] = 1 if enabled else 0
 
     async def async_get_rtk_map(
         self, map_id: str | None, *, force: bool = False

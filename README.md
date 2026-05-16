@@ -22,6 +22,7 @@ If this integration helps you, you can support Smart Service:
 - RTK map camera rendered from the Worx private map API.
 - RTK robot position as a `device_tracker`.
 - Optional RTK address sensor using OpenStreetMap Nominatim reverse geocoding, disabled by default.
+- Switches for Smart edge cutting, Save the hedgehogs and schedule edge procedure.
 - Daily mowing progress, remaining progress and mowed area sensors when available from the API.
 - Separate smart mowing automation blueprint repository.
 - Polish and English translations.
@@ -76,6 +77,7 @@ The exact entity list depends on what your mower reports. Typical entities inclu
 - `device_tracker` RTK robot position
 - `sensor` battery, status, error, RSSI, schedule, rain delay, RTK map, daily progress, remaining progress, mowed area, runtime and maintenance values
 - `binary_sensor` online, locked, charging, rain, party mode and pause mode
+- `switch` Smart edge cutting, Save the hedgehogs and schedule edge procedure
 
 See [docs/entities.md](docs/entities.md) for a more detailed list.
 
