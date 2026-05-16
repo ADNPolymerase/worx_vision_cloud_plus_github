@@ -6,7 +6,12 @@ on:
       - main
     paths:
       - ".github/workflows/publish-release.yml"
+      - "brand/**"
       - "CHANGELOG.md"
+      - "hacs.json"
+      - "icon.png"
+      - "logo.png"
+      - "custom_components/worx_vision_cloud/brand/**"
       - "custom_components/worx_vision_cloud/manifest.json"
   workflow_dispatch:
 
@@ -66,8 +71,6 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git tag -f "$TAG_NAME" "$GITHUB_SHA"
           git push --force origin "refs/tags/$TAG_NAME"
-          git push origin ":refs/tags/v0.3.4" || true
-          gh release delete "v0.3.4" --yes --cleanup-tag || true
           if gh release view "$TAG_NAME" >/dev/null 2>&1; then
             gh release edit "$TAG_NAME" --title "$TAG_NAME" --notes-file RELEASE_NOTES.md --latest
           else

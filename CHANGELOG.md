@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.4
+
+- Added root-level `icon.png` and `logo.png` compatibility files so HACS can resolve the repository image in places that do not read `brand/icon.png`.
+- Updated the release workflow to publish icon-only fixes.
+
 ## 0.3.3
 
 - Added Home Assistant switches for Smart edge cutting, Save the hedgehogs and schedule edge procedure.
