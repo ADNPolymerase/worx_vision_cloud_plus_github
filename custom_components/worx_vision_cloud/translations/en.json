@@ -127,11 +127,23 @@
       },
       "pause_mode_enabled": {
         "name": "Pause mode enabled"
+      },
+      "smart_edge_cut": {
+        "name": "Smart edge cutting"
+      },
+      "save_hedgehogs": {
+        "name": "Save the hedgehogs"
+      },
+      "schedule_border_cut": {
+        "name": "Schedule edge procedure"
       }
     },
     "button": {
       "refresh": {
         "name": "Refresh"
+      },
+      "reset_blade_counter": {
+        "name": "Reset blade runtime"
       }
     },
     "camera": {

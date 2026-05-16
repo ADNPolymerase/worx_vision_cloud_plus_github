@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.0
+
+- Added diagnostic entities for Smart edge cutting, Save the hedgehogs and schedule edge procedure API fields.
+- Added button to reset blade runtime after blade replacement.
+
 ## 0.2.2
 
 - Added root-level HACS brand assets so the repository icon appears in HACS.

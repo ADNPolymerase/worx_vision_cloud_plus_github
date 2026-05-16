@@ -7,6 +7,7 @@ from typing import Callable, Awaitable, Any
 from homeassistant.components.button import ButtonEntity, ButtonEntityDescription
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
@@ -25,6 +26,18 @@ async def _refresh(coordinator, serial_number: str) -> None:
     await coordinator.async_request_device_update(serial_number)
 
 
+async def _reset_blade_counter(coordinator, serial_number: str) -> None:
+    """Reset the mower blade runtime counter after blade replacement."""
+    reset_blade_counter = getattr(coordinator.cloud, "reset_blade_counter", None)
+    if reset_blade_counter is None:
+        raise HomeAssistantError(
+            "The installed pyworxcloud version does not support blade counter reset"
+        )
+
+    await reset_blade_counter(serial_number)
+    await coordinator.async_request_device_update(serial_number)
+
+
 BUTTONS: tuple[WorxButtonDescription, ...] = (
     WorxButtonDescription(
         key="refresh",
@@ -32,6 +45,13 @@ BUTTONS: tuple[WorxButtonDescription, ...] = (
         icon="mdi:refresh",
         entity_category=EntityCategory.CONFIG,
         press_fn=_refresh,
+    ),
+    WorxButtonDescription(
+        key="reset_blade_counter",
+        translation_key="reset_blade_counter",
+        icon="mdi:timer-refresh-outline",
+        entity_category=EntityCategory.CONFIG,
+        press_fn=_reset_blade_counter,
     ),
 )
 

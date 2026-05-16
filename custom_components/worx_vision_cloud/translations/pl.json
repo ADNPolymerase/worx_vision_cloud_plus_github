@@ -127,11 +127,23 @@
       },
       "pause_mode_enabled": {
         "name": "Tryb pauzy aktywny"
+      },
+      "smart_edge_cut": {
+        "name": "Inteligentne przycinanie krawędzi"
+      },
+      "save_hedgehogs": {
+        "name": "Uratuj jeże"
+      },
+      "schedule_border_cut": {
+        "name": "Procedura krawędzi harmonogramu"
       }
     },
     "button": {
       "refresh": {
         "name": "Odśwież"
+      },
+      "reset_blade_counter": {
+        "name": "Reset czasu pracy noży"
       }
     },
     "camera": {
