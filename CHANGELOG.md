@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.4
+
+- Added integration-root icon and logo files so Home Assistant and HACS update cards can resolve the brand image more reliably.
+
 ## 0.3.3
 
 - Added Home Assistant switches for Smart edge cutting, Save the hedgehogs and schedule edge procedure.
