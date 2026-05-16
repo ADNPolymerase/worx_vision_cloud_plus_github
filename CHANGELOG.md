@@ -1,15 +1,12 @@
 # Changelog
 
-## 0.3.4
-
-- Added integration-root icon and logo files so Home Assistant and HACS update cards can resolve the brand image more reliably.
-
 ## 0.3.3
 
 - Added Home Assistant switches for Smart edge cutting, Save the hedgehogs and schedule edge procedure.
 - Renamed the Polish rain binary sensor label to `Czujnik opadów deszczu`.
 - Removed the standard total driven distance sensor because the Worx payload does not update it reliably.
 - Added entity-registry cleanup for the removed total driven distance sensor.
+- Added integration-root icon and logo files so Home Assistant and HACS update cards can resolve the brand image more reliably.
 
 ## 0.3.2
 
