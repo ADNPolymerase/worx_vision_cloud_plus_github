@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.2
+
+- Removed the unreliable battery charging binary sensor.
+- Removed the unreliable distance covered sensor.
+- Added entity-registry cleanup for both removed entities.
+
 ## 1.0.1
 
 - Fixed mower command refresh for `pyworxcloud==6.3.6` by removing an unsupported `timeout` argument from device update requests.

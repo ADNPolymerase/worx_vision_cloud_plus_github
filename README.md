@@ -27,7 +27,7 @@ If this integration helps you, you can support Smart Service:
 - RTK robot position as a `device_tracker`.
 - Optional RTK address sensor using OpenStreetMap Nominatim reverse geocoding, disabled by default.
 - Switches for Smart edge cutting, Save the hedgehogs and schedule edge procedure.
-- Daily mowing progress, remaining progress, mowed area, lawn area, distance and efficiency sensors when available from the API.
+- Daily mowing progress, remaining progress, mowed area, lawn area and efficiency sensors when available from the API.
 - Separate smart mowing automation blueprint repository.
 - Polish and English translations.
 - Optional raw payload entities for debugging, disabled by default.
@@ -80,7 +80,7 @@ The exact entity list depends on what your mower reports. Typical entities inclu
 - `camera` RTK map
 - `device_tracker` RTK robot position
 - `sensor` battery, status, error, readiness, cloud connection, RSSI, schedule, rain delay, RTK map, RTK trail, daily progress, remaining progress, mowed area, runtime, efficiency and maintenance values
-- `binary_sensor` online, IoT/MQTT registration, locked, charging, rain, party mode and pause mode
+- `binary_sensor` online, IoT/MQTT registration, locked, rain, party mode and pause mode
 - `switch` firmware auto update, mower lock, native schedule, auto schedule, Smart edge cutting, Save the hedgehogs and schedule edge procedure
 - `number` rain delay, schedule time extension, lawn area and lawn perimeter
 - `update` firmware version, release notes and OTA install when supported

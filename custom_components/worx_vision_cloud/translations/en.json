@@ -75,9 +75,6 @@
       "lawn_perimeter": {
         "name": "Lawn perimeter"
       },
-      "distance_covered": {
-        "name": "Distance covered"
-      },
       "mowing_efficiency": {
         "name": "Mowing efficiency"
       },
@@ -166,9 +163,6 @@
       },
       "locked": {
         "name": "Locked"
-      },
-      "battery_charging": {
-        "name": "Battery charging"
       },
       "rain_triggered": {
         "name": "Rain triggered"

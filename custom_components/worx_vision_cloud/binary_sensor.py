@@ -256,14 +256,6 @@ BINARY_SENSORS: tuple[WorxBinarySensorDescription, ...] = (
         value_fn=lambda d: getattr(d, "locked", None),
     ),
     WorxBinarySensorDescription(
-        key="battery_charging",
-        translation_key="battery_charging",
-        device_class=BinarySensorDeviceClass.BATTERY_CHARGING,
-        value_fn=lambda d: _battery(d, "charging")
-        if isinstance(_battery(d, "charging"), bool)
-        else None,
-    ),
-    WorxBinarySensorDescription(
         key="rain_triggered",
         translation_key="rain_triggered",
         device_class=BinarySensorDeviceClass.MOISTURE,

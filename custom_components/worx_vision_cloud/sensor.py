@@ -188,10 +188,6 @@ def _lawn_perimeter(device) -> float | None:
     return perimeter if perimeter and perimeter > 0 else None
 
 
-def _distance_covered(device) -> float | None:
-    return _as_float(_product_item(device, "distance_covered"), 2)
-
-
 def _mowing_efficiency(device) -> float | None:
     area = _area_mowed_today(device)
     work_minutes = _as_float(_product_item(device, "mower_work_time"))
@@ -626,16 +622,6 @@ STANDARD_SENSORS: tuple[WorxSensorDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         icon="mdi:vector-polyline",
         value_fn=_lawn_perimeter,
-    ),
-    WorxSensorDescription(
-        key="distance_covered",
-        translation_key="distance_covered",
-        native_unit_of_measurement=UnitOfLength.METERS,
-        device_class=SensorDeviceClass.DISTANCE,
-        state_class=SensorStateClass.TOTAL_INCREASING,
-        entity_category=EntityCategory.DIAGNOSTIC,
-        icon="mdi:map-marker-distance",
-        value_fn=_distance_covered,
     ),
     WorxSensorDescription(
         key="mowing_efficiency",

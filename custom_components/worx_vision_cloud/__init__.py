@@ -130,11 +130,14 @@ def _async_migrate_entity_registry(hass: HomeAssistant, devices: dict) -> None:
     """Clean up entity registry changes introduced by newer entity names."""
     registry = er.async_get(hass)
     for serial_number in devices:
-        distance_entity_id = registry.async_get_entity_id(
-            "sensor", DOMAIN, f"{serial_number}_distance_driven_total"
-        )
-        if distance_entity_id is not None:
-            registry.async_remove(distance_entity_id)
+        for domain, unique_id in (
+            ("sensor", f"{serial_number}_distance_driven_total"),
+            ("sensor", f"{serial_number}_distance_covered"),
+            ("binary_sensor", f"{serial_number}_battery_charging"),
+        ):
+            entity_id = registry.async_get_entity_id(domain, DOMAIN, unique_id)
+            if entity_id is not None:
+                registry.async_remove(entity_id)
 
         rain_entity_id = registry.async_get_entity_id(
             "binary_sensor", DOMAIN, f"{serial_number}_rain_triggered"

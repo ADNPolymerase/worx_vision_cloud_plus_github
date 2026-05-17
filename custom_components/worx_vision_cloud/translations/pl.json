@@ -75,9 +75,6 @@
       "lawn_perimeter": {
         "name": "Obwód trawnika"
       },
-      "distance_covered": {
-        "name": "Przejechany dystans"
-      },
       "mowing_efficiency": {
         "name": "Wydajność koszenia"
       },
@@ -166,9 +163,6 @@
       },
       "locked": {
         "name": "Zablokowana"
-      },
-      "battery_charging": {
-        "name": "Ładowanie baterii"
       },
       "rain_triggered": {
         "name": "Czujnik opadów deszczu"
