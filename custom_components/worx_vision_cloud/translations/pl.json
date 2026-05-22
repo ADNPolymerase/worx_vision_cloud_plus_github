@@ -161,6 +161,9 @@
       "rain_triggered": {
         "name": "Czujnik opadów deszczu"
       },
+      "robot_lifted": {
+        "name": "Robot uniesiony"
+      },
       "off_limits_enabled": {
         "name": "Off Limits aktywne"
       },

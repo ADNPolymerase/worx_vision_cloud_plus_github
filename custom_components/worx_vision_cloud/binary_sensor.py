@@ -46,6 +46,14 @@ def _rain(device, key, default=None):
     return get_dict_value(getattr(device, "rainsensor", {}), key, default)
 
 
+def _error(device, key, default=None):
+    return get_dict_value(getattr(device, "error", {}), key, default)
+
+
+def _orientation(device, key, default=None):
+    return get_dict_value(getattr(device, "orientation", {}), key, default)
+
+
 def _product_item(device) -> dict[str, Any]:
     """Return cached product item details from the private API."""
     value = getattr(device, "_worx_vision_product_item", {}) or {}
@@ -156,6 +164,37 @@ def _save_hedgehogs_attributes(device) -> dict[str, Any]:
     }
 
 
+def _normalized_text(value: Any) -> str:
+    """Return normalized API text for robust comparisons."""
+    return str(value or "").strip().lower().replace("_", " ").replace("-", " ")
+
+
+def _robot_lifted(device) -> bool | None:
+    """Return whether the mower currently reports a lifted/upside-down error."""
+    error_id = _error(device, "id")
+    description = _error(device, "description")
+    normalized = _normalized_text(description)
+
+    if error_id in (0, -1) or normalized in {"no error", "none"}:
+        return False
+
+    if description is None or normalized == "":
+        return None
+
+    return "lifted" in normalized or "upside down" in normalized
+
+
+def _robot_lifted_attributes(device) -> dict[str, Any]:
+    """Return lift-alarm context from the current API payload."""
+    return {
+        "error_id": _error(device, "id"),
+        "error_description": _error(device, "description"),
+        "pitch": _orientation(device, "pitch"),
+        "roll": _orientation(device, "roll"),
+        "yaw": _orientation(device, "yaw"),
+    }
+
+
 BINARY_SENSORS: tuple[WorxBinarySensorDescription, ...] = (
     WorxBinarySensorDescription(
         key="online",
@@ -196,6 +235,13 @@ BINARY_SENSORS: tuple[WorxBinarySensorDescription, ...] = (
         translation_key="rain_triggered",
         device_class=BinarySensorDeviceClass.MOISTURE,
         value_fn=lambda d: _rain(d, "triggered"),
+    ),
+    WorxBinarySensorDescription(
+        key="robot_lifted",
+        translation_key="robot_lifted",
+        device_class=BinarySensorDeviceClass.PROBLEM,
+        value_fn=_robot_lifted,
+        attrs_fn=_robot_lifted_attributes,
     ),
     WorxBinarySensorDescription(
         key="party_mode_enabled",

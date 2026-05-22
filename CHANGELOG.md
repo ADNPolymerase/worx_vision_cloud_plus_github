@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Added a robot-lifted binary sensor based on Worx Cloud `lifted` and `upside down` error states.
 - Removed the unavailable schedule edge procedure entities.
 - Removed the radio link validation pending binary sensor.
 - Removed the duplicate read-only lawn perimeter sensor.

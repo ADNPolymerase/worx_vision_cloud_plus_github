@@ -161,6 +161,9 @@
       "rain_triggered": {
         "name": "Rain triggered"
       },
+      "robot_lifted": {
+        "name": "Robot lifted"
+      },
       "off_limits_enabled": {
         "name": "Off limits enabled"
       },
