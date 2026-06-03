@@ -214,13 +214,16 @@ async def async_setup_entry(
 ) -> None:
     """Set up number entities."""
     runtime = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities(
-        [
-            WorxVisionNumber(runtime.coordinator, entry, serial_number, description)
-            for serial_number in runtime.coordinator.data
-            for description in NUMBERS
-        ]
+    entities: list[NumberEntity] = [
+        WorxVisionNumber(runtime.coordinator, entry, serial_number, description)
+        for serial_number in runtime.coordinator.data
+        for description in NUMBERS
+    ]
+    entities.extend(
+        OneTimeMowingRuntimeNumber(runtime.coordinator, entry, serial_number)
+        for serial_number in runtime.coordinator.data
     )
+    async_add_entities(entities)
 
 
 class WorxVisionNumber(WorxVisionEntity, NumberEntity):
@@ -268,4 +271,31 @@ class WorxVisionNumber(WorxVisionEntity, NumberEntity):
         """Set a new numeric value."""
         await self.entity_description.set_fn(
             self.coordinator, self._serial_number, value
+        )
+
+
+class OneTimeMowingRuntimeNumber(WorxVisionEntity, NumberEntity):
+    """Local runtime setting for one-time mowing."""
+
+    _attr_translation_key = "one_time_mowing_runtime"
+    _attr_icon = "mdi:timer-play-outline"
+    _attr_native_min_value = 10
+    _attr_native_max_value = 120
+    _attr_native_step = 5
+    _attr_native_unit_of_measurement = UnitOfTime.MINUTES
+    _attr_mode = NumberMode.SLIDER
+
+    def __init__(self, coordinator, entry, serial_number: str) -> None:
+        """Initialize one-time mowing runtime number."""
+        super().__init__(coordinator, entry, serial_number, "one_time_mowing_runtime")
+
+    @property
+    def native_value(self) -> float | None:
+        """Return configured runtime."""
+        return self.coordinator.one_time_mowing_runtime(self._serial_number)
+
+    async def async_set_native_value(self, value: float) -> None:
+        """Set configured runtime."""
+        await self.coordinator.async_set_one_time_mowing_runtime(
+            self._serial_number, round(value)
         )

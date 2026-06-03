@@ -34,6 +34,8 @@ RTK_ADDRESS_USER_AGENT = (
 PRODUCT_ITEM_CACHE_TTL = timedelta(minutes=5)
 FIRMWARE_UPGRADE_CACHE_TTL = timedelta(minutes=30)
 RTK_TRAIL_MAX_POINTS = 300
+DEFAULT_ONE_TIME_MOWING_RUNTIME = 60
+DEFAULT_ONE_TIME_MOWING_EDGE_CUT = False
 
 
 def _device_map(cloud: WorxCloud) -> dict[str, DeviceHandler]:
@@ -44,6 +46,16 @@ def _device_map(cloud: WorxCloud) -> dict[str, DeviceHandler]:
         if serial is not None:
             devices[str(serial)] = device
     return devices
+
+
+def _normalize_zone_ids(zones: list[int] | None) -> list[int]:
+    """Return ordered, de-duplicated positive zone identifiers."""
+    normalized: list[int] = []
+    for zone in zones or []:
+        zone_id = int(zone)
+        if zone_id > 0 and zone_id not in normalized:
+            normalized.append(zone_id)
+    return normalized
 
 
 class WorxVisionCoordinator(DataUpdateCoordinator[dict[str, DeviceHandler]]):
@@ -71,6 +83,7 @@ class WorxVisionCoordinator(DataUpdateCoordinator[dict[str, DeviceHandler]]):
         self._rtk_position_trails: dict[
             str, deque[tuple[datetime, float, float]]
         ] = {}
+        self._one_time_mowing_options: dict[str, dict[str, Any]] = {}
 
     async def async_setup(self) -> None:
         """Attach pyworxcloud callbacks."""
@@ -162,6 +175,130 @@ class WorxVisionCoordinator(DataUpdateCoordinator[dict[str, DeviceHandler]]):
             )
 
         await self.async_request_device_update(serial_number)
+
+    async def async_start_one_time_mowing(
+        self,
+        serial_number: str,
+        runtime_minutes: int,
+        edge_cut: bool = False,
+        zones: list[int] | None = None,
+    ) -> None:
+        """Start a one-time mowing task, optionally limited to RTK zones."""
+        mower = self.cloud.get_mower(serial_number)
+        if not mower.get("online"):
+            raise HomeAssistantError(
+                "The device is currently offline, no action was sent"
+            )
+
+        protocol = mower.get("protocol")
+        runtime = int(runtime_minutes)
+        zone_ids = _normalize_zone_ids(zones)
+        if protocol == 0:
+            mqtt = getattr(self.cloud, "mqtt", None)
+            if mqtt is None:
+                raise HomeAssistantError("Worx MQTT connection is not available")
+
+            command_topic = (mower.get("mqtt_topics") or {}).get("command_in")
+            if command_topic is None:
+                raise HomeAssistantError("Worx command topic is not available")
+
+            if len(zone_ids) > 1:
+                raise HomeAssistantError(
+                    "Legacy Worx protocol supports only one selected zone per one-time mowing command"
+                )
+
+            setzone = getattr(self.cloud, "setzone", None)
+            if zone_ids and setzone is not None:
+                await setzone(serial_number, zone_ids[0])
+
+            await mqtt.apublish(
+                serial_number,
+                command_topic,
+                {"sc": {"ots": {"bc": int(edge_cut), "wtm": runtime}}},
+                protocol,
+            )
+        elif protocol == 1:
+            await self.cloud.send(
+                serial_number,
+                json.dumps(
+                    {
+                        "sc": {
+                            "once": {
+                                "time": runtime,
+                                "cfg": {"cut": {"b": int(edge_cut), "z": zone_ids}},
+                            }
+                        }
+                    }
+                ),
+            )
+        else:
+            raise HomeAssistantError(
+                "One-time mowing is not supported for this mower protocol"
+            )
+
+        await self.async_request_device_update(serial_number)
+
+    def _one_time_options(self, serial_number: str) -> dict[str, Any]:
+        """Return local one-time mowing options for a mower."""
+        return self._one_time_mowing_options.setdefault(
+            serial_number,
+            {
+                "runtime": DEFAULT_ONE_TIME_MOWING_RUNTIME,
+                "edge_cut": DEFAULT_ONE_TIME_MOWING_EDGE_CUT,
+                "zones": [],
+            },
+        )
+
+    def one_time_mowing_runtime(self, serial_number: str) -> int:
+        """Return configured one-time mowing runtime."""
+        return int(
+            self._one_time_options(serial_number).get(
+                "runtime", DEFAULT_ONE_TIME_MOWING_RUNTIME
+            )
+        )
+
+    def one_time_mowing_edge_cut(self, serial_number: str) -> bool:
+        """Return whether configured one-time mowing starts with edge cutting."""
+        return bool(
+            self._one_time_options(serial_number).get(
+                "edge_cut", DEFAULT_ONE_TIME_MOWING_EDGE_CUT
+            )
+        )
+
+    def one_time_mowing_zones(self, serial_number: str) -> list[int]:
+        """Return configured one-time mowing RTK zones."""
+        return list(self._one_time_options(serial_number).get("zones", []))
+
+    async def async_set_one_time_mowing_runtime(
+        self, serial_number: str, runtime_minutes: int
+    ) -> None:
+        """Set local one-time mowing runtime."""
+        runtime = max(10, min(120, int(runtime_minutes)))
+        self._one_time_options(serial_number)["runtime"] = runtime
+        self.async_set_updated_data(self.data or {})
+
+    async def async_set_one_time_mowing_edge_cut(
+        self, serial_number: str, enabled: bool
+    ) -> None:
+        """Set whether local one-time mowing starts with edge cutting."""
+        self._one_time_options(serial_number)["edge_cut"] = bool(enabled)
+        self.async_set_updated_data(self.data or {})
+
+    async def async_set_one_time_mowing_zones(
+        self, serial_number: str, zones: list[int]
+    ) -> None:
+        """Set local one-time mowing RTK zones."""
+        self._one_time_options(serial_number)["zones"] = _normalize_zone_ids(zones)
+        self.async_set_updated_data(self.data or {})
+
+    async def async_start_configured_one_time_mowing(self, serial_number: str) -> None:
+        """Start one-time mowing using local UI options."""
+        await self.async_start_one_time_mowing(
+            serial_number,
+            self.one_time_mowing_runtime(serial_number),
+            self.one_time_mowing_edge_cut(serial_number),
+            self.one_time_mowing_zones(serial_number),
+        )
 
     async def async_set_rain_delay(self, serial_number: str, minutes: int) -> None:
         """Set rain delay in minutes."""

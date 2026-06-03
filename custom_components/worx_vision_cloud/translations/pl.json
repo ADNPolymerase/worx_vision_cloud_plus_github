@@ -198,6 +198,9 @@
       },
       "save_hedgehogs": {
         "name": "Ochrona jeży"
+      },
+      "one_time_mowing_edge_cut": {
+        "name": "Krawędzie koszenia jednorazowego"
       }
     },
     "button": {
@@ -212,6 +215,9 @@
       },
       "start_edge_cut": {
         "name": "Uruchom przycinanie krawędzi"
+      },
+      "start_one_time_mowing": {
+        "name": "Uruchom koszenie jednorazowe"
       }
     },
     "number": {
@@ -226,6 +232,14 @@
       },
       "lawn_perimeter": {
         "name": "Obwód trawnika"
+      },
+      "one_time_mowing_runtime": {
+        "name": "Czas koszenia jednorazowego"
+      }
+    },
+    "select": {
+      "one_time_mowing_zones": {
+        "name": "Strefy koszenia jednorazowego"
       }
     },
     "update": {

@@ -337,13 +337,16 @@ async def async_setup_entry(
 ) -> None:
     """Set up switches."""
     runtime = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities(
-        [
-            WorxVisionSwitch(runtime.coordinator, entry, serial_number, description)
-            for serial_number in runtime.coordinator.data
-            for description in SWITCHES
-        ]
+    entities: list[SwitchEntity] = [
+        WorxVisionSwitch(runtime.coordinator, entry, serial_number, description)
+        for serial_number in runtime.coordinator.data
+        for description in SWITCHES
+    ]
+    entities.extend(
+        OneTimeMowingEdgeCutSwitch(runtime.coordinator, entry, serial_number)
+        for serial_number in runtime.coordinator.data
     )
+    async_add_entities(entities)
 
 
 class WorxVisionSwitch(WorxVisionEntity, SwitchEntity):
@@ -391,4 +394,34 @@ class WorxVisionSwitch(WorxVisionEntity, SwitchEntity):
         del kwargs
         await self.entity_description.turn_fn(
             self.coordinator, self._serial_number, False
+        )
+
+
+class OneTimeMowingEdgeCutSwitch(WorxVisionEntity, SwitchEntity):
+    """Local edge-cut setting for one-time mowing."""
+
+    _attr_translation_key = "one_time_mowing_edge_cut"
+    _attr_icon = "mdi:border-outside"
+
+    def __init__(self, coordinator, entry, serial_number: str) -> None:
+        """Initialize one-time mowing edge-cut switch."""
+        super().__init__(coordinator, entry, serial_number, "one_time_mowing_edge_cut")
+
+    @property
+    def is_on(self) -> bool | None:
+        """Return configured edge-cut state."""
+        return self.coordinator.one_time_mowing_edge_cut(self._serial_number)
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        """Enable edge cutting for one-time mowing."""
+        del kwargs
+        await self.coordinator.async_set_one_time_mowing_edge_cut(
+            self._serial_number, True
+        )
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        """Disable edge cutting for one-time mowing."""
+        del kwargs
+        await self.coordinator.async_set_one_time_mowing_edge_cut(
+            self._serial_number, False
         )

@@ -1,0 +1,39 @@
+start_one_time_mowing:
+  name: Uruchom koszenie jednorazowe
+  description: Uruchamia jednorazowe koszenie z wybranym czasem pracy, opcjonalnym koszeniem krawedzi i opcjonalna lista stref RTK.
+  fields:
+    entity_id:
+      name: Kosiarka
+      description: Encja kosiarki Worx Vision Cloud PLUS.
+      required: true
+      selector:
+        entity:
+          domain: lawn_mower
+    runtime:
+      name: Czas koszenia
+      description: Czas koszenia jednorazowego w minutach.
+      required: false
+      default: 60
+      selector:
+        number:
+          min: 10
+          max: 120
+          step: 5
+          unit_of_measurement: min
+          mode: slider
+    edge_cut:
+      name: Koszenie krawedzi
+      description: Czy jednorazowe koszenie ma zaczac sie od krawedzi.
+      required: false
+      default: false
+      selector:
+        boolean:
+    zones:
+      name: Strefy
+      description: Opcjonalna lista identyfikatorow stref RTK, np. [1, 2]. Puste pole oznacza domyslne koszenie bez ograniczenia do konkretnych stref.
+      required: false
+      example:
+        - 1
+        - 2
+      selector:
+        object:

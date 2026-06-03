@@ -21,6 +21,7 @@ PLATFORMS = [
     Platform.CAMERA,
     Platform.DEVICE_TRACKER,
     Platform.SENSOR,
+    Platform.SELECT,
     Platform.BINARY_SENSOR,
     Platform.SWITCH,
     Platform.NUMBER,
@@ -31,3 +32,9 @@ PLATFORMS = [
 ATTR_RAW_PATH = "raw_path"
 ATTR_RAW_SOURCE = "raw_source"
 ATTR_SERIAL_NUMBER = "serial_number"
+
+SERVICE_START_ONE_TIME_MOWING = "start_one_time_mowing"
+
+ATTR_EDGE_CUT = "edge_cut"
+ATTR_RUNTIME = "runtime"
+ATTR_ZONES = "zones"

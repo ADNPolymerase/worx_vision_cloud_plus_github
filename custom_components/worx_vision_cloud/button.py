@@ -49,6 +49,11 @@ async def _start_edge_cut(coordinator, serial_number: str) -> None:
     await coordinator.async_start_edge_cut(serial_number)
 
 
+async def _start_one_time_mowing(coordinator, serial_number: str) -> None:
+    """Start one-time mowing with the configured integration options."""
+    await coordinator.async_start_configured_one_time_mowing(serial_number)
+
+
 def _is_online(device) -> bool:
     """Return true when the mower is online and can receive commands."""
     return bool(getattr(device, "online", False))
@@ -81,6 +86,13 @@ BUTTONS: tuple[WorxButtonDescription, ...] = (
         translation_key="start_edge_cut",
         icon="mdi:border-outside",
         press_fn=_start_edge_cut,
+        available_fn=_is_online,
+    ),
+    WorxButtonDescription(
+        key="start_one_time_mowing",
+        translation_key="start_one_time_mowing",
+        icon="mdi:play-circle-outline",
+        press_fn=_start_one_time_mowing,
         available_fn=_is_online,
     ),
 )

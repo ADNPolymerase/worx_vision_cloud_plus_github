@@ -8,17 +8,27 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import logging
+from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_EMAIL, CONF_PASSWORD
+from homeassistant.const import ATTR_ENTITY_ID, CONF_EMAIL, CONF_PASSWORD
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
+from homeassistant.exceptions import (
+    ConfigEntryAuthFailed,
+    ConfigEntryNotReady,
+    HomeAssistantError,
+)
 from homeassistant.helpers import entity_registry as er
+import homeassistant.helpers.config_validation as cv
+import voluptuous as vol
 
 from pyworxcloud import WorxCloud
 from pyworxcloud.exceptions import AuthorizationError, TooManyRequestsError
 
 from .const import (
+    ATTR_EDGE_CUT,
+    ATTR_RUNTIME,
+    ATTR_ZONES,
     CONF_CLOUD,
     CONF_EXPOSE_RAW,
     CONF_VERIFY_SSL,
@@ -27,10 +37,22 @@ from .const import (
     DEFAULT_VERIFY_SSL,
     DOMAIN,
     PLATFORMS,
+    SERVICE_START_ONE_TIME_MOWING,
 )
 from .coordinator import WorxVisionCoordinator
 
 _LOGGER = logging.getLogger(__name__)
+
+START_ONE_TIME_MOWING_SCHEMA = vol.Schema(
+    {
+        vol.Required(ATTR_ENTITY_ID): cv.entity_id,
+        vol.Optional(ATTR_RUNTIME, default=60): vol.All(
+            vol.Coerce(int), vol.Range(min=10, max=120)
+        ),
+        vol.Optional(ATTR_EDGE_CUT, default=False): cv.boolean,
+        vol.Optional(ATTR_ZONES, default=[]): lambda value: _service_zone_ids(value),
+    }
+)
 
 
 @dataclass
@@ -86,6 +108,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         cloud=cloud,
         coordinator=coordinator,
     )
+    _async_setup_services(hass)
 
     if entry.data.get(CONF_EXPOSE_RAW, DEFAULT_EXPOSE_RAW):
         hass.config_entries.async_update_entry(
@@ -113,9 +136,88 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         await _safe_disconnect(runtime.cloud)
 
     if not hass.data.get(DOMAIN):
+        if hass.services.has_service(DOMAIN, SERVICE_START_ONE_TIME_MOWING):
+            hass.services.async_remove(DOMAIN, SERVICE_START_ONE_TIME_MOWING)
         hass.data.pop(DOMAIN, None)
 
     return unload_ok
+
+
+def _service_zone_ids(value: Any) -> list[int]:
+    """Normalize service-provided zone IDs."""
+    if value in (None, "", []):
+        return []
+    if isinstance(value, str):
+        values = [item.strip() for item in value.replace(";", ",").split(",")]
+    elif isinstance(value, list | tuple | set):
+        values = list(value)
+    else:
+        values = [value]
+
+    zone_ids: list[int] = []
+    for item in values:
+        if item in (None, ""):
+            continue
+        try:
+            zone_id = int(item)
+        except (TypeError, ValueError) as err:
+            raise vol.Invalid("Zone IDs must be positive numbers") from err
+        if zone_id < 1:
+            raise vol.Invalid("Zone IDs must be positive numbers")
+        if zone_id not in zone_ids:
+            zone_ids.append(zone_id)
+    return zone_ids
+
+
+def _async_setup_services(hass: HomeAssistant) -> None:
+    """Register integration-level services."""
+    if hass.services.has_service(DOMAIN, SERVICE_START_ONE_TIME_MOWING):
+        return
+
+    async def async_start_one_time_mowing(call) -> None:
+        entity_id = call.data[ATTR_ENTITY_ID]
+        entity_entry = er.async_get(hass).async_get(entity_id)
+        if (
+            entity_entry is None
+            or entity_entry.platform != DOMAIN
+            or not entity_entry.unique_id.endswith("_mower")
+        ):
+            raise HomeAssistantError(
+                "Select a Worx Vision Cloud PLUS lawn_mower entity"
+            )
+
+        serial_number = entity_entry.unique_id.removesuffix("_mower")
+        runtime_data = hass.data.get(DOMAIN, {}).get(entity_entry.config_entry_id)
+        if (
+            runtime_data is None
+            or serial_number not in runtime_data.coordinator.data
+        ):
+            runtime_data = next(
+                (
+                    data
+                    for data in hass.data.get(DOMAIN, {}).values()
+                    if serial_number in data.coordinator.data
+                ),
+                None,
+            )
+        if runtime_data is None:
+            raise HomeAssistantError(
+                "Could not find runtime data for the selected Worx mower"
+            )
+
+        await runtime_data.coordinator.async_start_one_time_mowing(
+            serial_number,
+            call.data[ATTR_RUNTIME],
+            call.data[ATTR_EDGE_CUT],
+            call.data[ATTR_ZONES],
+        )
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_START_ONE_TIME_MOWING,
+        async_start_one_time_mowing,
+        schema=START_ONE_TIME_MOWING_SCHEMA,
+    )
 
 
 async def _safe_disconnect(cloud: WorxCloud) -> None:

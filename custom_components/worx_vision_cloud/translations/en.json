@@ -198,6 +198,9 @@
       },
       "save_hedgehogs": {
         "name": "Save the hedgehogs"
+      },
+      "one_time_mowing_edge_cut": {
+        "name": "One-time mowing edge cut"
       }
     },
     "button": {
@@ -212,6 +215,9 @@
       },
       "start_edge_cut": {
         "name": "Start edge cutting"
+      },
+      "start_one_time_mowing": {
+        "name": "Start one-time mowing"
       }
     },
     "number": {
@@ -226,6 +232,14 @@
       },
       "lawn_perimeter": {
         "name": "Lawn perimeter"
+      },
+      "one_time_mowing_runtime": {
+        "name": "One-time mowing runtime"
+      }
+    },
+    "select": {
+      "one_time_mowing_zones": {
+        "name": "One-time mowing zones"
       }
     },
     "update": {

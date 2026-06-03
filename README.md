@@ -16,6 +16,7 @@ If this integration helps you, you can support Smart Service:
 
 - Native Home Assistant `lawn_mower` entity.
 - Start, pause and dock commands.
+- One-time mowing controls with runtime, edge cutting and optional RTK zone selection.
 - On-demand edge cutting button.
 - Native firmware `update` entity with OTA install support when Worx exposes it.
 - Rain delay, schedule time-extension, lawn area and lawn perimeter number entities.

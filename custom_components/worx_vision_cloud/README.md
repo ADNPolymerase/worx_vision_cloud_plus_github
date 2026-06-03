@@ -16,6 +16,7 @@ Main features:
 - recent RTK trail overlay
 - RTK robot position tracker
 - optional RTK address sensor, disabled by default
+- one-time mowing controls with runtime, edge cutting and optional RTK zone selection
 - edge cutting and hedgehog protection switches
 - on-demand edge cutting button
 - blade runtime reset button
