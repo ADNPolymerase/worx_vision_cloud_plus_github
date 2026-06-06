@@ -155,8 +155,9 @@ class WorxVisionCoordinator(DataUpdateCoordinator[dict[str, DeviceHandler]]):
         if command_topic is None:
             raise HomeAssistantError("Worx command topic is not available")
 
-        # pyworxcloud.edgecut() can silently no-op on Vision mowers when the
-        # derived schedule capability is missing, even though border_cut exists.
+        # Firmware 3.46.x changed cmd 101 behavior on Vision mowers so it can
+        # continue into a full mowing cycle. Use a zero-minute one-time schedule
+        # with edge cutting enabled instead; this keeps the action edge-only.
         if protocol == 0:
             await mqtt.apublish(
                 serial_number,
@@ -165,10 +166,8 @@ class WorxVisionCoordinator(DataUpdateCoordinator[dict[str, DeviceHandler]]):
                 protocol,
             )
         elif protocol == 1:
-            uuid = mower.get("uuid")
-            if uuid is None:
-                raise HomeAssistantError("Worx mower UUID is not available")
-            await mqtt.apublish(uuid, command_topic, {"cmd": 101}, protocol)
+            await self.async_start_one_time_mowing(serial_number, 0, True, [])
+            return
         else:
             raise HomeAssistantError(
                 "Edge cutting is not supported for this mower protocol"
@@ -218,18 +217,31 @@ class WorxVisionCoordinator(DataUpdateCoordinator[dict[str, DeviceHandler]]):
                 protocol,
             )
         elif protocol == 1:
-            await self.cloud.send(
-                serial_number,
-                json.dumps(
-                    {
-                        "sc": {
-                            "once": {
-                                "time": runtime,
-                                "cfg": {"cut": {"b": int(edge_cut), "z": zone_ids}},
-                            }
+            mqtt = getattr(self.cloud, "mqtt", None)
+            if mqtt is None:
+                raise HomeAssistantError("Worx MQTT connection is not available")
+
+            command_topic = (mower.get("mqtt_topics") or {}).get("command_in")
+            if command_topic is None:
+                raise HomeAssistantError("Worx command topic is not available")
+
+            uuid = mower.get("uuid")
+            if uuid is None:
+                raise HomeAssistantError("Worx mower UUID is not available")
+
+            await mqtt.apublish(
+                uuid,
+                command_topic,
+                {
+                    "cmd": 10,
+                    "sc": {
+                        "once": {
+                            "time": runtime,
+                            "cfg": {"cut": {"b": int(edge_cut), "z": zone_ids}},
                         }
-                    }
-                ),
+                    },
+                },
+                protocol,
             )
         else:
             raise HomeAssistantError(

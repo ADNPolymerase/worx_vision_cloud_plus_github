@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Changed the Vision edge-cut button to send a zero-minute one-time schedule with edge cutting enabled instead of `cmd:101`, because firmware 3.46.x can continue into full mowing after `cmd:101`.
 - Added one-time mowing controls and service with runtime, edge-cut and optional RTK zone selection.
 - Added a robot-lifted binary sensor based on Worx Cloud `lifted` and `upside down` error states.
 - Removed the unavailable schedule edge procedure entities.
