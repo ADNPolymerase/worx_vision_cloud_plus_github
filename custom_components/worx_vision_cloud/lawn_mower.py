@@ -24,6 +24,26 @@ STARTING_STATUS_IDS = {2, 3, 33, 103}
 PAUSED_STATUS_IDS = {34}
 DOCKED_STATUS_IDS = {1}
 ERROR_STATUS_IDS = {9, 10, 13}
+RAIN_DELAY_ERROR_DESCRIPTIONS = {"rain delay", "rain_delay"}
+
+
+def _is_rain_delay(device) -> bool:
+    """Return whether the mower reports rain delay instead of a real fault."""
+    error_description = get_dict_value(getattr(device, "error", {}), "description")
+    if (
+        error_description is not None
+        and str(error_description).strip().lower() in RAIN_DELAY_ERROR_DESCRIPTIONS
+    ):
+        return True
+
+    rain = getattr(device, "rainsensor", {})
+    rain_remaining = get_dict_value(rain, "remaining")
+    try:
+        remaining_minutes = float(rain_remaining or 0)
+    except (TypeError, ValueError):
+        remaining_minutes = 0
+
+    return get_dict_value(rain, "triggered") is True or remaining_minutes > 0
 
 
 async def async_setup_entry(
@@ -67,7 +87,7 @@ class WorxVisionLawnMower(WorxVisionEntity, LawnMowerEntity):
         status_id = get_dict_value(getattr(device, "status", {}), "id", -1)
         error_id = get_dict_value(getattr(device, "error", {}), "id", 0)
 
-        if error_id not in (None, 0, -1):
+        if error_id not in (None, 0, -1) and not _is_rain_delay(device):
             return LawnMowerActivity.ERROR
         if status_id in DOCKED_STATUS_IDS:
             return LawnMowerActivity.DOCKED
@@ -77,6 +97,8 @@ class WorxVisionLawnMower(WorxVisionEntity, LawnMowerEntity):
             return LawnMowerActivity.RETURNING
         if status_id in MOWING_STATUS_IDS or status_id in STARTING_STATUS_IDS:
             return LawnMowerActivity.MOWING
+        if _is_rain_delay(device):
+            return LawnMowerActivity.DOCKED
         if status_id in ERROR_STATUS_IDS:
             return LawnMowerActivity.ERROR
         return None
@@ -96,6 +118,7 @@ class WorxVisionLawnMower(WorxVisionEntity, LawnMowerEntity):
             "error_description": get_dict_value(
                 getattr(device, "error", {}), "description"
             ),
+            "rain_delay": _is_rain_delay(device),
             "battery_percent": get_dict_value(getattr(device, "battery", {}), "percent"),
         }
 

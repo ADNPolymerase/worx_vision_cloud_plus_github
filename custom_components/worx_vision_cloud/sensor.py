@@ -70,8 +70,10 @@ STATUS_LABELS_PL = {
     "idle": "bezczynna",
     "manual stop": "zatrzymana ręcznie",
     "rain delay": "opóźnienie po deszczu",
+    "rain_delay": "opóźnienie po deszczu",
     "locked": "zablokowana",
     "error": "błąd",
+    "no error": "brak błędu",
     "offline": "offline",
 }
 
@@ -85,6 +87,8 @@ READINESS_LABELS_PL = {
     "locked": "zablokowana",
     "offline": "offline",
 }
+
+RAIN_DELAY_ERROR_DESCRIPTIONS = {"rain delay", "rain_delay"}
 
 
 def _label_pl(value: Any, labels: dict[str, str]) -> str | None:
@@ -116,11 +120,30 @@ def _status(device, key, default=None):
 
 
 def _status_state(device) -> str | None:
+    if _is_rain_delay(device):
+        return _label_pl("rain_delay", READINESS_LABELS_PL)
     return _label_pl(_status(device, "description"), STATUS_LABELS_PL)
 
 
 def _error(device, key, default=None):
     return get_dict_value(getattr(device, "error", {}), key, default)
+
+
+def _error_state(device) -> str | None:
+    return _label_pl(_error(device, "description"), STATUS_LABELS_PL)
+
+
+def _is_rain_delay(device) -> bool:
+    """Return whether Worx reports a rain delay as its current blocker."""
+    error_description = _error(device, "description")
+    if (
+        error_description is not None
+        and str(error_description).strip().lower() in RAIN_DELAY_ERROR_DESCRIPTIONS
+    ):
+        return True
+
+    rain_remaining = _as_float(_rain(device, "remaining")) or 0
+    return _rain(device, "triggered") is True or rain_remaining > 0
 
 
 def _zone(device, key, default=None):
@@ -337,13 +360,12 @@ def _mowing_readiness_code(device) -> str | None:
     if getattr(device, "locked", None) is True:
         return "locked"
 
+    if _is_rain_delay(device):
+        return "rain_delay"
+
     error_id = _error(device, "id")
     if error_id not in (None, 0, -1):
         return "error"
-
-    rain_remaining = _as_float(_rain(device, "remaining")) or 0
-    if _rain(device, "triggered") is True or rain_remaining > 0:
-        return "rain_delay"
 
     battery_percent = _battery(device, "percent")
     if battery_percent is not None and battery_percent < 20:
@@ -372,6 +394,7 @@ def _mowing_readiness_attributes(device) -> dict[str, Any]:
         "raw_status_description": _status(device, "description"),
         "error_id": _error(device, "id"),
         "error_description": _error(device, "description"),
+        "rain_delay": _is_rain_delay(device),
         "battery_percent": _battery(device, "percent"),
         "rain_triggered": _rain(device, "triggered"),
         "rain_remaining": _rain(device, "remaining"),
@@ -540,6 +563,9 @@ STANDARD_SENSORS: tuple[WorxSensorDescription, ...] = (
         attrs_fn=lambda d: {
             "id": _status(d, "id"),
             "raw_description": _status(d, "description"),
+            "error_id": _error(d, "id"),
+            "error_description": _error(d, "description"),
+            "rain_delay": _is_rain_delay(d),
         },
     ),
     WorxSensorDescription(
@@ -547,8 +573,12 @@ STANDARD_SENSORS: tuple[WorxSensorDescription, ...] = (
         translation_key="error",
         icon="mdi:alert-circle-outline",
         entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda d: _error(d, "description"),
-        attrs_fn=lambda d: {"id": _error(d, "id")},
+        value_fn=_error_state,
+        attrs_fn=lambda d: {
+            "id": _error(d, "id"),
+            "raw_description": _error(d, "description"),
+            "rain_delay": _is_rain_delay(d),
+        },
     ),
     WorxSensorDescription(
         key="rssi",
