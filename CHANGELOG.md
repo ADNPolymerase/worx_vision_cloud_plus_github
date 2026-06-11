@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 1.0.6 - 2026-06-11
+
+- Improved the RTK map trail so recent mower movement is rendered as a darker mowed grass swath instead of a thin GPS line.
+- Calculated the mowed swath width from the mower model cutting width and the current map scale; WR308E/WR303E-class mowers use 18 cm.
+- Clipped the mowed swath to the lawn contour so it stays inside the mapped grass area.
+
 ## 1.0.5 - 2026-06-11
 
 - Added RTK station-based status correction so Home Assistant can show the mower as docked when Worx Cloud is stuck on stale mowing/returning/searching-home states.

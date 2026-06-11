@@ -24,9 +24,36 @@ TRAIL_MAX_GAP = timedelta(minutes=5)
 TRAIL_MAX_SEGMENT_DISTANCE_M = 35.0
 TRAIL_MIN_POINT_DISTANCE_M = 0.25
 TRAIL_MAP_MARGIN_M = 12.0
-MOWED_SWATH_WIDTH = 6
+DEFAULT_CUTTING_WIDTH_M = 0.18
+MOWED_SWATH_MIN_WIDTH_PX = 3.0
+MOWED_SWATH_MAX_WIDTH_PX = 32.0
 MOWED_MAX_OPACITY = 0.58
 MOWED_MIN_OPACITY = 0.12
+CUTTING_WIDTH_BY_MODEL_M = {
+    "WR202E": 0.18,
+    "WR206E": 0.18,
+    "WR208E": 0.18,
+    "WR303E": 0.18,
+    "WR305E": 0.18,
+    "WR308E": 0.18,
+    "WR365E": 0.18,
+    "WR365E1": 0.18,
+    "WR213E": 0.22,
+    "WR216E": 0.22,
+    "WR312E": 0.22,
+    "WR318E": 0.22,
+    "WR330E": 0.22,
+    "WR340E": 0.22,
+    "WR341E": 0.22,
+    "WR342E": 0.22,
+    "WR344E": 0.22,
+    "WR310": 0.229,
+    "WR320": 0.229,
+    "WR340": 0.229,
+    "WR341": 0.229,
+    "WR344": 0.229,
+    "WR346": 0.229,
+}
 
 
 async def async_setup_entry(
@@ -56,6 +83,7 @@ class WorxVisionMapCamera(WorxVisionEntity, Camera):
         WorxVisionEntity.__init__(self, coordinator, entry, serial_number, "rtk_map_camera")
         self.content_type = "image/svg+xml"
         self._last_map_data: dict[str, Any] | None = None
+        self._last_mowed_swath_width_px: float | None = None
 
     @property
     def available(self) -> bool:
@@ -81,6 +109,8 @@ class WorxVisionMapCamera(WorxVisionEntity, Camera):
             "zone_perimeter_m": _scaled_length(get_dict_value(zone, "perimeter")),
             "exclusion_count": exclusion_count,
             "marker_count": marker_count,
+            "cutting_width_cm": round(_cutting_width_m(self.device) * 100, 1),
+            "mowed_swath_width_px": self._last_mowed_swath_width_px,
         }
         return {key: value for key, value in attrs.items() if value is not None}
 
@@ -95,7 +125,42 @@ class WorxVisionMapCamera(WorxVisionEntity, Camera):
             self._last_map_data = map_data
 
         trail = self.coordinator.rtk_position_timed_trail(self._serial_number)
-        return _render_svg_map(map_data, rtk_position(self.device), trail).encode()
+        svg, swath_width_px = _render_svg_map(
+            map_data,
+            rtk_position(self.device),
+            trail,
+            _cutting_width_m(self.device),
+        )
+        self._last_mowed_swath_width_px = swath_width_px
+        self.async_write_ha_state()
+        return svg.encode()
+
+
+def _normalize_model(value: Any) -> str:
+    """Return a compact model key, for example WR365E1."""
+    return "".join(ch for ch in str(value or "").upper() if ch.isalnum())
+
+
+def _cutting_width_m(device: Any) -> float:
+    """Return mower cutting width in meters based on known WORX models."""
+    product_item = getattr(device, "_worx_vision_product_item", {}) or {}
+    candidates = [
+        getattr(device, "model", None),
+        get_dict_value(product_item, "model"),
+        get_dict_value(product_item, "product_model"),
+        get_dict_value(product_item, "code"),
+        get_dict_value(product_item, "sku"),
+    ]
+    for candidate in candidates:
+        normalized = _normalize_model(candidate)
+        if not normalized:
+            continue
+        if normalized in CUTTING_WIDTH_BY_MODEL_M:
+            return CUTTING_WIDTH_BY_MODEL_M[normalized]
+        for model, width in CUTTING_WIDTH_BY_MODEL_M.items():
+            if normalized.startswith(model):
+                return width
+    return DEFAULT_CUTTING_WIDTH_M
 
 
 def _scaled_area(value: Any) -> float | None:
@@ -219,7 +284,7 @@ def _projector(points: list[tuple[float, float]]):
         y_m = (max_lat - lat) * 110_540
         return offset_x + x_m * scale, offset_y + y_m * scale
 
-    return project
+    return project, scale
 
 
 def _path(points: list[tuple[float, float]], project) -> str:
@@ -248,6 +313,41 @@ def _open_path(points: list[tuple[float, float]], project) -> str:
 def _polyline(points: list[tuple[float, float]], project) -> str:
     """Return SVG polyline points."""
     return " ".join(f"{x:.2f},{y:.2f}" for x, y in (project(point) for point in points))
+
+
+def _compound_zone_path(contour: dict[str, Any], project) -> str:
+    """Return one SVG path for a zone contour and its holes."""
+    parts: list[str] = []
+    outer = _contour_points(contour)
+    if outer:
+        parts.append(_path(outer, project))
+    for child in get_dict_value(contour, "children", []) or []:
+        if not isinstance(child, dict):
+            continue
+        child_points = _contour_points(child)
+        if child_points:
+            parts.append(_path(child_points, project))
+    return " ".join(part for part in parts if part)
+
+
+def _mowed_clip_def(map_data: dict[str, Any], project) -> str:
+    """Return an SVG clip path that keeps mowed swaths inside lawn zones."""
+    clip_paths: list[str] = []
+    for layer, contour in _iter_contours(map_data):
+        if layer != "zone":
+            continue
+        path = _compound_zone_path(contour, project)
+        if path:
+            clip_paths.append(
+                f'<path d="{path}" fill-rule="evenodd" clip-rule="evenodd" />'
+            )
+    if not clip_paths:
+        return ""
+    return (
+        '<clipPath id="mowed-clip" clipPathUnits="userSpaceOnUse">'
+        f'{"".join(clip_paths)}'
+        "</clipPath>"
+    )
 
 
 def _distance_m(
@@ -351,6 +451,8 @@ def _mowed_opacity(timestamp: datetime, now: datetime) -> float:
 def _mowed_segments_svg(
     segments: list[list[tuple[datetime, float, float]]],
     project,
+    swath_width_px: float,
+    clip_ref: str,
 ) -> list[str]:
     """Return SVG paths for mowed swaths that fade with age."""
     now = datetime.now(UTC)
@@ -361,19 +463,32 @@ def _mowed_segments_svg(
             path = _open_path(points, project)
             opacity = _mowed_opacity(end[0], now)
             paths.append(
-                f'<path class="mowed" d="{path}" opacity="{opacity:.2f}" />'
+                f'<path class="mowed" d="{path}" opacity="{opacity:.2f}" '
+                f'stroke-width="{swath_width_px:.2f}" />'
             )
+    if paths and clip_ref:
+        return [f'<g class="mowed-area" clip-path="{clip_ref}">', *paths, "</g>"]
     return paths
+
+
+def _mowed_swath_width_px(cutting_width_m: float, meters_to_pixels: float) -> float:
+    """Return SVG stroke width for a real mower cutting width."""
+    raw_width = cutting_width_m * meters_to_pixels
+    return max(
+        MOWED_SWATH_MIN_WIDTH_PX,
+        min(MOWED_SWATH_MAX_WIDTH_PX, raw_width),
+    )
 
 
 def _render_svg_map(
     map_data: dict[str, Any] | None,
     robot_position: tuple[float, float] | None,
     trail: list[tuple[datetime, float, float]] | None = None,
-) -> str:
+    cutting_width_m: float = DEFAULT_CUTTING_WIDTH_M,
+) -> tuple[str, float | None]:
     """Render map data to SVG."""
     if not isinstance(map_data, dict):
-        return _placeholder_svg("Brak mapy RTK z API")
+        return _placeholder_svg("Brak mapy RTK z API"), None
 
     trail_segments = _trail_segments(map_data, trail)
     trail_points = [
@@ -383,9 +498,12 @@ def _render_svg_map(
     ]
     points = _iter_bounds_points(map_data, robot_position, trail_points)
     if not points:
-        return _placeholder_svg("Mapa RTK nie zawiera punktow")
+        return _placeholder_svg("Mapa RTK nie zawiera punktow"), None
 
-    project = _projector(points)
+    project, meters_to_pixels = _projector(points)
+    swath_width_px = _mowed_swath_width_px(cutting_width_m, meters_to_pixels)
+    clip_def = _mowed_clip_def(map_data, project)
+    clip_ref = "url(#mowed-clip)" if clip_def else ""
     body: list[str] = []
 
     for layer, contour in _iter_contours(map_data):
@@ -418,7 +536,7 @@ def _render_svg_map(
                 f'<path class="exclusion" d="{exclusion_path}" />'
             )
 
-    body.extend(_mowed_segments_svg(trail_segments, project))
+    body.extend(_mowed_segments_svg(trail_segments, project, swath_width_px, clip_ref))
 
     markers = get_nested_value(map_data, "layers", "markers", default=[]) or []
     for marker in markers:
@@ -470,16 +588,17 @@ def _render_svg_map(
         ".hole-edge{fill:none;stroke:#cfd4dc;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}"
         ".exclusion-shadow{fill:#000;opacity:.1;transform:translate(2px,4px)}"
         ".exclusion{fill:#b66b36;stroke:#b66b36;stroke-width:4;opacity:.96}"
-        f".mowed{{fill:none;stroke:#005f2b;stroke-width:{MOWED_SWATH_WIDTH};stroke-linecap:round;stroke-linejoin:round}}"
+        ".mowed{fill:none;stroke:#005726;stroke-linecap:round;stroke-linejoin:round}"
         ".station-shadow{fill:#000;opacity:.14}.station circle{fill:#70380f}.station path{fill:#fff}"
         ".robot-shadow{fill:#000;opacity:.35}.robot .track{fill:#161b1f;stroke:#4b5563;stroke-width:2;stroke-linejoin:round}.robot .body{fill:#33383d;stroke:#111820;stroke-width:3;stroke-linejoin:round}.robot .wing{fill:#f47b20;stroke:#ffae55;stroke-width:1.5;stroke-linejoin:round}.robot .rtk{fill:#f8fafc;stroke:#e5e7eb;stroke-width:2}.robot .panel{fill:#22272e;stroke:#111820;stroke-width:1.5}.robot .stop{fill:#f43f4f;stroke:#991b1b;stroke-width:1.5}.robot .knob{fill:#f47b20;stroke:#fff7ed;stroke-width:1.5}.robot .camera{fill:#1f2429;stroke:#89929d;stroke-width:1}.robot .groove{fill:none;stroke:#171b20;stroke-width:2;stroke-linecap:round;opacity:.7}"
         "</style>"
         '<defs><pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse">'
         '<path class="grid" d="M 48 0 L 0 0 0 48" /></pattern></defs>'
+        f'<defs>{clip_def}</defs>'
         f'<rect width="{SVG_WIDTH}" height="{SVG_HEIGHT}" fill="url(#grid)" />'
         f'{"".join(body)}'
         "</svg>"
-    )
+    ), round(swath_width_px, 2)
 
 
 def _placeholder_svg(message: str) -> str:
