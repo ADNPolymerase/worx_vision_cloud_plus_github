@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 1.0.8 - 2026-06-12
+
+- Added the official HACS validation workflow required for default HACS repository submissions.
+- Updated HACS repository metadata so the integration passes the current HACS Action checks.
+
 ## 1.0.7 - 2026-06-12
 
 - Removed RTK-based status overriding so mower state always follows the raw Worx Cloud status.
