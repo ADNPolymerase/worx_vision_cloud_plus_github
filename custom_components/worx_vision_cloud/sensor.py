@@ -79,24 +79,6 @@ STATUS_LABELS_PL = {
     "offline": "offline",
 }
 
-RTK_STATION_HOME_STATUS_IDS = {
-    2,
-    3,
-    4,
-    5,
-    6,
-    7,
-    8,
-    12,
-    30,
-    32,
-    33,
-    103,
-    104,
-    110,
-    111,
-}
-
 READINESS_LABELS_PL = {
     "ready": "gotowa",
     "mowing": "koszenie",
@@ -142,8 +124,6 @@ def _status(device, key, default=None):
 def _status_state(device) -> str | None:
     if _is_rain_delay(device):
         return _label_pl("rain_delay", READINESS_LABELS_PL)
-    if _status_corrected_to_home_by_rtk(device):
-        return _label_pl("home", STATUS_LABELS_PL)
     return _label_pl(_status(device, "description"), STATUS_LABELS_PL)
 
 
@@ -168,30 +148,14 @@ def _is_rain_delay(device) -> bool:
     return _rain(device, "triggered") is True or rain_remaining > 0
 
 
-def _has_real_error(device) -> bool:
-    """Return true when the mower reports a real error state."""
-    error_id = _error(device, "id", 0)
-    return error_id not in (None, 0, -1) and not _is_rain_delay(device)
-
-
-def _status_corrected_to_home_by_rtk(device) -> bool:
-    """Return true when RTK station position proves the mower is home."""
-    return (
-        _status(device, "id") in RTK_STATION_HOME_STATUS_IDS
-        and not _has_real_error(device)
-        and rtk_at_station(device)
-    )
-
-
 def _rtk_station_status_attrs(device) -> dict[str, Any]:
-    """Return diagnostic attributes for RTK-based status correction."""
+    """Return diagnostic attributes for RTK station proximity."""
     station_distance = rtk_distance_to_station_m(device)
     if station_distance is None:
         return {}
     return {
         "rtk_station_distance_m": round(station_distance, 2),
         "rtk_at_station": rtk_at_station(device),
-        "status_corrected_by_rtk": _status_corrected_to_home_by_rtk(device),
     }
 
 
@@ -424,9 +388,7 @@ def _mowing_readiness_code(device) -> str | None:
         return "charging"
 
     status_id = _status(device, "id")
-    if status_id in (7, 8, 12, 32, 110, 111) and not _status_corrected_to_home_by_rtk(
-        device
-    ):
+    if status_id in (7, 8, 12, 32, 110, 111):
         return "mowing"
     return "ready"
 
@@ -606,7 +568,7 @@ def _rtk_address_attributes(
         "country_code": _first_address_text(address, "country_code"),
         "attribution": address_data.get("licence"),
         "lookup_time": lookup_time.isoformat() if lookup_time else None,
-        "privacy_note": "Entity disabled by default; enabling it sends rounded RTK coordinates to Nominatim.",
+        "privacy_note": "Entity disabled by default; enabling it sends RTK coordinates rounded to 7 decimal places to Nominatim.",
     }
     return {key: value for key, value in attrs.items() if value is not None}
 

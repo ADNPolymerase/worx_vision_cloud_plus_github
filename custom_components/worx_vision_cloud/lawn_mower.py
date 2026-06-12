@@ -25,9 +25,6 @@ PAUSED_STATUS_IDS = {34}
 DOCKED_STATUS_IDS = {1}
 ERROR_STATUS_IDS = {9, 10, 13}
 RAIN_DELAY_ERROR_DESCRIPTIONS = {"rain delay", "rain_delay"}
-RTK_STATION_DOCK_OVERRIDE_STATUS_IDS = (
-    MOWING_STATUS_IDS | RETURNING_STATUS_IDS | STARTING_STATUS_IDS
-)
 
 
 def _is_rain_delay(device) -> bool:
@@ -53,15 +50,6 @@ def _has_real_error(device) -> bool:
     """Return true when the mower reports a real error state."""
     error_id = get_dict_value(getattr(device, "error", {}), "id", 0)
     return error_id not in (None, 0, -1) and not _is_rain_delay(device)
-
-
-def _status_corrected_to_docked_by_rtk(device, status_id: int | None) -> bool:
-    """Return true when RTK station position proves the mower is docked."""
-    return (
-        status_id in RTK_STATION_DOCK_OVERRIDE_STATUS_IDS
-        and not _has_real_error(device)
-        and rtk_at_station(device)
-    )
 
 
 async def async_setup_entry(
@@ -106,9 +94,7 @@ class WorxVisionLawnMower(WorxVisionEntity, LawnMowerEntity):
 
         if _has_real_error(device):
             return LawnMowerActivity.ERROR
-        if status_id in DOCKED_STATUS_IDS or _status_corrected_to_docked_by_rtk(
-            device, status_id
-        ):
+        if status_id in DOCKED_STATUS_IDS:
             return LawnMowerActivity.DOCKED
         if status_id in PAUSED_STATUS_IDS:
             return LawnMowerActivity.PAUSED
@@ -145,9 +131,6 @@ class WorxVisionLawnMower(WorxVisionEntity, LawnMowerEntity):
         if station_distance is not None:
             attrs["rtk_station_distance_m"] = round(station_distance, 2)
             attrs["rtk_at_station"] = rtk_at_station(device)
-            attrs["status_corrected_by_rtk"] = _status_corrected_to_docked_by_rtk(
-                device, get_dict_value(getattr(device, "status", {}), "id")
-            )
 
         gps = getattr(device, "gps", None)
         if gps is not None:

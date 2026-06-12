@@ -25,7 +25,7 @@ _LOGGER = logging.getLogger(__name__)
 
 RTK_MAP_CACHE_TTL = timedelta(minutes=30)
 RTK_ADDRESS_CACHE_TTL = timedelta(hours=24)
-RTK_ADDRESS_COORD_PRECISION = 3
+RTK_ADDRESS_COORD_PRECISION = 7
 RTK_ADDRESS_ENDPOINT = "https://nominatim.openstreetmap.org/reverse"
 RTK_ADDRESS_USER_AGENT = (
     "Worx Vision Cloud PLUS Home Assistant custom integration "

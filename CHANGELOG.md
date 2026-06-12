@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## 1.0.7 - 2026-06-12
+
+- Removed RTK-based status overriding so mower state always follows the raw Worx Cloud status.
+- Kept RTK station proximity as diagnostic attributes for automations without changing the displayed mower status.
+- Allowed the one-time mowing service to run for 1 minute so automations can send a short status-refresh command when Worx Cloud gets stuck.
+- Increased RTK address reverse-geocoding precision to 7 decimal places and kept the address based only on RTK coordinates.
+
 ## 1.0.6 - 2026-06-11
 
 - Improved the RTK map trail so recent mower movement is rendered as a darker mowed grass swath instead of a thin GPS line.

@@ -47,7 +47,7 @@ START_ONE_TIME_MOWING_SCHEMA = vol.Schema(
     {
         vol.Required(ATTR_ENTITY_ID): cv.entity_id,
         vol.Optional(ATTR_RUNTIME, default=60): vol.All(
-            vol.Coerce(int), vol.Range(min=10, max=120)
+            vol.Coerce(int), vol.Range(min=1, max=120)
         ),
         vol.Optional(ATTR_EDGE_CUT, default=False): cv.boolean,
         vol.Optional(ATTR_ZONES, default=[]): lambda value: _service_zone_ids(value),
