@@ -2,17 +2,5 @@
   "name": "Worx Vision Cloud PLUS",
   "render_readme": true,
   "homeassistant": "2025.1.0",
-  "domains": [
-    "lawn_mower",
-    "calendar",
-    "camera",
-    "device_tracker",
-    "sensor",
-    "binary_sensor",
-    "switch",
-    "number",
-    "button",
-    "update"
-  ],
   "iot_class": "Cloud Push"
 }
