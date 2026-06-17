@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.0.10 - 2026-06-17
+
+- Changed Vision one-time mowing with edge cutting back to the app-like one-time mowing payload (`cmd: 10` with `cfg.cut.b: 1`) so the mower performs normal mowing first and edge cutting at the end instead of doing an edge-only run.
+
 ## 1.0.9 - 2026-06-13
 
 - Changed Vision one-time mowing with edge cutting and no selected zones to use the firmware command that starts edge cutting followed by the normal mowing cycle.

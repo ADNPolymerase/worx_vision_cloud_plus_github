@@ -110,7 +110,7 @@ Starts one one-time mowing run.
 
 - `entity_id` - mower entity.
 - `runtime` - mowing time in minutes, from `10` to `120`.
-- `edge_cut` - start with edge cutting.
+- `edge_cut` - include edge cutting in the one-time mowing run. On Vision Cloud mowers this follows the WORX app behavior: normal mowing first, edge cutting at the end.
 - `zones` - optional RTK zone ID list, for example `[1, 2]`. Leave empty for default/all-zone mowing.
 
 Example:

@@ -230,26 +230,20 @@ class WorxVisionCoordinator(DataUpdateCoordinator[dict[str, DeviceHandler]]):
             if uuid is None:
                 raise HomeAssistantError("Worx mower UUID is not available")
 
-            if edge_cut and runtime > 0 and not zone_ids:
-                # Vision firmware 3.46.x treats cmd 101 as edge cutting followed
-                # by the normal mowing cycle. That is the reliable cloud command
-                # for the automation's "mow with edges" flow.
-                await mqtt.apublish(uuid, command_topic, {"cmd": 101}, protocol)
-            else:
-                await mqtt.apublish(
-                    uuid,
-                    command_topic,
-                    {
-                        "cmd": 10,
-                        "sc": {
-                            "once": {
-                                "time": runtime,
-                                "cfg": {"cut": {"b": int(edge_cut), "z": zone_ids}},
-                            }
-                        },
+            await mqtt.apublish(
+                uuid,
+                command_topic,
+                {
+                    "cmd": 10,
+                    "sc": {
+                        "once": {
+                            "time": runtime,
+                            "cfg": {"cut": {"b": int(edge_cut), "z": zone_ids}},
+                        }
                     },
-                    protocol,
-                )
+                },
+                protocol,
+            )
         else:
             raise HomeAssistantError(
                 "One-time mowing is not supported for this mower protocol"
