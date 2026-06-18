@@ -156,9 +156,8 @@ class WorxVisionCoordinator(DataUpdateCoordinator[dict[str, DeviceHandler]]):
         if command_topic is None:
             raise HomeAssistantError("Worx command topic is not available")
 
-        # Firmware 3.46.x changed cmd 101 behavior on Vision mowers so it can
-        # continue into a full mowing cycle. Use a zero-minute one-time schedule
-        # with edge cutting enabled instead; this keeps the action edge-only.
+        # On Vision Cloud firmware 3.46.x cmd 101 is the reliable edge-only
+        # command. Full one-time mowing uses cmd 10 instead.
         if protocol == 0:
             await mqtt.apublish(
                 serial_number,
@@ -230,20 +229,23 @@ class WorxVisionCoordinator(DataUpdateCoordinator[dict[str, DeviceHandler]]):
             if uuid is None:
                 raise HomeAssistantError("Worx mower UUID is not available")
 
-            await mqtt.apublish(
-                uuid,
-                command_topic,
-                {
-                    "cmd": 10,
-                    "sc": {
-                        "once": {
-                            "time": runtime,
-                            "cfg": {"cut": {"b": int(edge_cut), "z": zone_ids}},
-                        }
+            if edge_cut and runtime == 0 and not zone_ids:
+                await mqtt.apublish(uuid, command_topic, {"cmd": 101}, protocol)
+            else:
+                await mqtt.apublish(
+                    uuid,
+                    command_topic,
+                    {
+                        "cmd": 10,
+                        "sc": {
+                            "once": {
+                                "time": runtime,
+                                "cfg": {"cut": {"b": int(edge_cut), "z": zone_ids}},
+                            }
+                        },
                     },
-                },
-                protocol,
-            )
+                    protocol,
+                )
         else:
             raise HomeAssistantError(
                 "One-time mowing is not supported for this mower protocol"

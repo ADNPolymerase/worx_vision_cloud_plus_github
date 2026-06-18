@@ -11,19 +11,19 @@ start_one_time_mowing:
           domain: lawn_mower
     runtime:
       name: Czas koszenia
-      description: Czas koszenia jednorazowego w minutach.
+      description: Czas koszenia jednorazowego w minutach. Ustaw 0 z wlaczonym koszeniem krawedzi, aby uruchomic tylko krawedzie.
       required: false
       default: 60
       selector:
         number:
-          min: 1
+          min: 0
           max: 120
           step: 1
           unit_of_measurement: min
           mode: slider
     edge_cut:
       name: Koszenie krawedzi
-      description: Czy jednorazowe koszenie ma zaczac sie od krawedzi.
+      description: Czy jednorazowe koszenie ma zawierac koszenie krawedzi.
       required: false
       default: false
       selector:

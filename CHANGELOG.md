@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 1.0.11 - 2026-06-18
+
+- Allowed the one-time mowing service to accept `runtime: 0`, so automations can explicitly start an edge-only pass after normal mowing.
+- Updated the Home Assistant service description to show `runtime: 0` as the supported edge-only mode.
+- Mapped Vision Cloud `runtime: 0` with `edge_cut: true` to the dedicated edge-cut command (`cmd: 101`), while keeping normal one-time mowing on the app-like `cmd: 10` payload.
+
 ## 1.0.10 - 2026-06-17
 
 - Changed Vision one-time mowing with edge cutting back to the app-like one-time mowing payload (`cmd: 10` with `cfg.cut.b: 1`) so the mower performs normal mowing first and edge cutting at the end instead of doing an edge-only run.
