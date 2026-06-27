@@ -14,8 +14,35 @@ from .const import DOMAIN
 from .entity import WorxVisionEntity
 from .helpers import get_dict_value, rtk_map_attributes
 
-ALL_ZONES_OPTION = "Wszystkie strefy"
+DEFAULT_LANGUAGE = "en"
 MAX_COMBINATION_ZONES = 5
+
+# The select options are built from dynamic RTK zone combinations, so they cannot be
+# declared in translations/*.json. They are localized here from the HA UI language;
+# unknown languages fall back to English. Polish wording is preserved.
+ALL_ZONES_LABELS = {
+    "en": "All zones",
+    "fr": "Toutes les zones",
+    "de": "Alle Zonen",
+    "pl": "Wszystkie strefy",
+}
+ZONE_SINGULAR_LABELS = {
+    "en": "Zone",
+    "fr": "Zone",
+    "de": "Zone",
+    "pl": "Strefa",
+}
+ZONE_PLURAL_LABELS = {
+    "en": "Zones",
+    "fr": "Zones",
+    "de": "Zonen",
+    "pl": "Strefy",
+}
+
+
+def _all_zones_label(language: str) -> str:
+    """Return the localized 'all zones' option label."""
+    return ALL_ZONES_LABELS.get(language, ALL_ZONES_LABELS[DEFAULT_LANGUAGE])
 
 
 async def async_setup_entry(
@@ -48,26 +75,28 @@ def _zone_ids(device: Any) -> list[int]:
     return sorted(zone_ids)
 
 
-def _option_label(zone_ids: list[int]) -> str:
+def _option_label(zone_ids: list[int], language: str = DEFAULT_LANGUAGE) -> str:
     """Return a user-facing label for one zone selection."""
     if not zone_ids:
-        return ALL_ZONES_OPTION
+        return _all_zones_label(language)
     if len(zone_ids) == 1:
-        return f"Strefa {zone_ids[0]}"
-    return "Strefy " + ", ".join(str(zone_id) for zone_id in zone_ids)
+        singular = ZONE_SINGULAR_LABELS.get(language, ZONE_SINGULAR_LABELS[DEFAULT_LANGUAGE])
+        return f"{singular} {zone_ids[0]}"
+    plural = ZONE_PLURAL_LABELS.get(language, ZONE_PLURAL_LABELS[DEFAULT_LANGUAGE])
+    return plural + " " + ", ".join(str(zone_id) for zone_id in zone_ids)
 
 
-def _option_map(zone_ids: list[int]) -> dict[str, list[int]]:
+def _option_map(zone_ids: list[int], language: str = DEFAULT_LANGUAGE) -> dict[str, list[int]]:
     """Return select option label to zone ID list mapping."""
-    result: dict[str, list[int]] = {ALL_ZONES_OPTION: []}
+    result: dict[str, list[int]] = {_all_zones_label(language): []}
     if len(zone_ids) <= MAX_COMBINATION_ZONES:
         for count in range(1, len(zone_ids) + 1):
             for combo in combinations(zone_ids, count):
                 selected = list(combo)
-                result[_option_label(selected)] = selected
+                result[_option_label(selected, language)] = selected
     else:
         for zone_id in zone_ids:
-            result[_option_label([zone_id])] = [zone_id]
+            result[_option_label([zone_id], language)] = [zone_id]
     return result
 
 
@@ -82,11 +111,19 @@ class OneTimeMowingZonesSelect(WorxVisionEntity, SelectEntity):
         super().__init__(coordinator, entry, serial_number, "one_time_mowing_zones")
 
     @property
+    def _language(self) -> str:
+        """Return the active Home Assistant UI language."""
+        hass = getattr(self, "hass", None)
+        config = getattr(hass, "config", None)
+        return getattr(config, "language", None) or DEFAULT_LANGUAGE
+
+    @property
     def options(self) -> list[str]:
         """Return available zone choices."""
-        options = _option_map(_zone_ids(self.device))
+        language = self._language
+        options = _option_map(_zone_ids(self.device), language)
         current_label = _option_label(
-            self.coordinator.one_time_mowing_zones(self._serial_number)
+            self.coordinator.one_time_mowing_zones(self._serial_number), language
         )
         if current_label not in options:
             options[current_label] = self.coordinator.one_time_mowing_zones(
@@ -97,7 +134,9 @@ class OneTimeMowingZonesSelect(WorxVisionEntity, SelectEntity):
     @property
     def current_option(self) -> str | None:
         """Return selected zone choice."""
-        return _option_label(self.coordinator.one_time_mowing_zones(self._serial_number))
+        return _option_label(
+            self.coordinator.one_time_mowing_zones(self._serial_number), self._language
+        )
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
@@ -111,9 +150,10 @@ class OneTimeMowingZonesSelect(WorxVisionEntity, SelectEntity):
 
     async def async_select_option(self, option: str) -> None:
         """Select one zone choice."""
-        options = _option_map(_zone_ids(self.device))
+        language = self._language
+        options = _option_map(_zone_ids(self.device), language)
         current_zones = self.coordinator.one_time_mowing_zones(self._serial_number)
-        current_label = _option_label(current_zones)
+        current_label = _option_label(current_zones, language)
         if current_label not in options:
             options[current_label] = current_zones
         if option not in options:

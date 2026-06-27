@@ -291,7 +291,7 @@
     },
     "select": {
       "one_time_mowing_zones": {
-        "name": "Zones de la tonte unique"
+        "name": "Zone de tonte"
       }
     },
     "update": {

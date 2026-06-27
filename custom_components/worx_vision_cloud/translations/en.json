@@ -291,7 +291,7 @@
     },
     "select": {
       "one_time_mowing_zones": {
-        "name": "One-time mowing zones"
+        "name": "Mowing zone"
       }
     },
     "update": {

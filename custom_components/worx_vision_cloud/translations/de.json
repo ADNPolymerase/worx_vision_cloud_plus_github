@@ -291,7 +291,7 @@
     },
     "select": {
       "one_time_mowing_zones": {
-        "name": "Zonen für einmaliges Mähen"
+        "name": "Mähzone"
       }
     },
     "update": {
