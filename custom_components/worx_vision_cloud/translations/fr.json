@@ -200,7 +200,7 @@
         "name": "Sauvons les hérissons"
       },
       "one_time_mowing_edge_cut": {
-        "name": "Coupe de bordure (tonte unique)"
+        "name": "Coupe de bordure"
       }
     },
     "button": {
