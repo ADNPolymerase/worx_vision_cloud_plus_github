@@ -180,7 +180,7 @@
         "name": "Coupe de bordure intelligente"
       },
       "save_hedgehogs": {
-        "name": "Mode hérissons"
+        "name": "Sauvons les hérissons"
       }
     },
     "switch": {
@@ -197,7 +197,7 @@
         "name": "Coupe de bordure intelligente"
       },
       "save_hedgehogs": {
-        "name": "Mode hérissons"
+        "name": "Sauvons les hérissons"
       },
       "one_time_mowing_edge_cut": {
         "name": "Coupe de bordure (tonte unique)"
