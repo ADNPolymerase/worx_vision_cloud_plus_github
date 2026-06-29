@@ -16,8 +16,24 @@ from .helpers import (
     get_dict_value,
     schedule_day_index,
     schedule_day_label,
+    schedule_language,
     schedule_slots,
 )
+
+# Calendar event text is free-form and outside translations/*.json, so it is
+# localized here from the UI language (falls back to English).
+EVENT_SUMMARY = {
+    "en": "Mowing",
+    "de": "Mähen",
+    "fr": "Tonte",
+    "pl": "Koszenie trawnika",
+}
+EVENT_LABELS = {
+    "en": {"day": "Day", "duration": "Duration", "edge": "Edge cutting", "source": "Source", "yes": "yes"},
+    "de": {"day": "Tag", "duration": "Dauer", "edge": "Kantenschnitt", "source": "Quelle", "yes": "ja"},
+    "fr": {"day": "Jour", "duration": "Durée", "edge": "Coupe de bordure", "source": "Source", "yes": "oui"},
+    "pl": {"day": "Dzień", "duration": "Czas trwania", "edge": "Koszenie krawędzi", "source": "Źródło", "yes": "tak"},
+}
 
 
 async def async_setup_entry(
@@ -44,6 +60,12 @@ class WorxVisionScheduleCalendar(WorxVisionEntity, CalendarEntity):
     def __init__(self, coordinator, entry, serial_number: str) -> None:
         """Initialize schedule calendar."""
         super().__init__(coordinator, entry, serial_number, "schedule_calendar")
+
+    @property
+    def _language(self) -> str:
+        """Return the active Home Assistant UI language."""
+        config = getattr(self.hass, "config", None)
+        return getattr(config, "language", None) or "en"
 
     @property
     def event(self) -> CalendarEvent | None:
@@ -74,6 +96,7 @@ class WorxVisionScheduleCalendar(WorxVisionEntity, CalendarEntity):
     ) -> list[CalendarEvent]:
         """Build weekly schedule occurrences for the requested range."""
         events: list[CalendarEvent] = []
+        language = self._language
         tzinfo = start_date.tzinfo or dt_util.DEFAULT_TIME_ZONE
         first_day = start_date.date() - dt.timedelta(days=1)
         last_day = end_date.date() + dt.timedelta(days=1)
@@ -85,7 +108,7 @@ class WorxVisionScheduleCalendar(WorxVisionEntity, CalendarEntity):
                 if schedule_day_index(get_dict_value(slot, "day")) != current_day.weekday():
                     continue
 
-                event = _slot_to_event(slot, current_day, tzinfo)
+                event = _slot_to_event(slot, current_day, tzinfo, language)
                 if event is None:
                     continue
                 if event.end <= start_date or event.start >= end_date:
@@ -99,8 +122,9 @@ def _slot_to_event(
     slot: Any,
     event_date: dt.date,
     tzinfo: dt.tzinfo,
+    language: str = "en",
 ) -> CalendarEvent | None:
-    """Convert one schedule slot to a calendar event occurrence."""
+    """Convert one schedule slot to a localized calendar event occurrence."""
     start_time = _parse_time(get_dict_value(slot, "start"))
     if start_time is None:
         return None
@@ -117,21 +141,23 @@ def _slot_to_event(
             return None
         end = start + dt.timedelta(minutes=duration)
 
-    day_label = schedule_day_label(get_dict_value(slot, "day"))
+    lang = schedule_language(language)
+    labels = EVENT_LABELS[lang]
+    day_label = schedule_day_label(get_dict_value(slot, "day"), lang)
     duration = _duration_minutes(slot)
-    description_parts = [f"Dzien: {day_label}"]
+    description_parts = [f"{labels['day']}: {day_label}"]
     if duration is not None:
-        description_parts.append(f"Czas trwania: {duration} min")
+        description_parts.append(f"{labels['duration']}: {duration} min")
     if get_dict_value(slot, "boundary"):
-        description_parts.append("Koszenie krawedzi: tak")
+        description_parts.append(f"{labels['edge']}: {labels['yes']}")
     source = get_dict_value(slot, "source")
     if source is not None:
-        description_parts.append(f"Zrodlo: {source}")
+        description_parts.append(f"{labels['source']}: {source}")
 
     return CalendarEvent(
         start=start,
         end=end,
-        summary="Koszenie trawnika",
+        summary=EVENT_SUMMARY[lang],
         description="\n".join(description_parts),
     )
 

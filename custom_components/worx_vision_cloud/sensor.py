@@ -642,13 +642,6 @@ STANDARD_SENSORS: tuple[WorxSensorDescription, ...] = (
         },
     ),
     WorxSensorDescription(
-        key="schedule",
-        translation_key="schedule",
-        icon="mdi:calendar-clock",
-        value_fn=schedule_summary,
-        attrs_fn=schedule_attributes,
-    ),
-    WorxSensorDescription(
         key="mowing_readiness",
         translation_key="mowing_readiness",
         icon="mdi:clipboard-check-outline",
@@ -942,6 +935,7 @@ async def async_setup_entry(
             for description in STANDARD_SENSORS
         )
         entities.append(WorxVisionAddressSensor(coordinator, entry, serial_number))
+        entities.append(WorxScheduleSensor(coordinator, entry, serial_number))
         entities.append(WorxNextScheduleSensor(coordinator, entry, serial_number))
         entities.append(WorxAreaMowedTodaySensor(coordinator, entry, serial_number))
         entities.append(WorxDailyProgressSensor(coordinator, entry, serial_number))
@@ -1024,6 +1018,34 @@ class WorxNextScheduleSensor(WorxVisionEntity, SensorEntity):
     def native_value(self) -> datetime | None:
         """Return the next scheduled mowing start."""
         return next_schedule_start(self.device, dt_util.now())
+
+
+class WorxScheduleSensor(WorxVisionEntity, SensorEntity):
+    """Compact weekly schedule summary, localized to the UI language."""
+
+    _attr_translation_key = "schedule"
+    _attr_icon = "mdi:calendar-clock"
+
+    def __init__(self, coordinator, entry, serial_number: str) -> None:
+        """Initialize the schedule sensor."""
+        super().__init__(coordinator, entry, serial_number, "schedule")
+
+    @property
+    def _language(self) -> str:
+        """Return the active Home Assistant UI language."""
+        config = getattr(self.hass, "config", None)
+        return getattr(config, "language", None) or "en"
+
+    @property
+    def native_value(self) -> str | None:
+        """Return the localized schedule summary."""
+        return schedule_summary(self.device, self._language)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return structured schedule data."""
+        attrs = schedule_attributes(self.device, self._language)
+        return {key: value for key, value in attrs.items() if value is not None}
 
 
 class _WorxDailyMowedBase(WorxVisionEntity, RestoreSensor):
