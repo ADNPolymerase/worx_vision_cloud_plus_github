@@ -405,13 +405,36 @@ def parse_schedule_time(value: Any) -> time | None:
         return None
 
 
+def _library_next_schedule_start(device: Any, now: datetime) -> datetime | None:
+    """Return the next start computed by pyworxcloud, if available.
+
+    pyworxcloud exposes ``schedules["next_schedule_start"]`` as a wall-clock
+    string ("%Y-%m-%d %H:%M:%S"); the digits are the local schedule time, so we
+    attach ``now``'s timezone to make it timezone-aware.
+    """
+    schedules = getattr(device, "schedules", {}) or {}
+    raw = get_dict_value(schedules, "next_schedule_start")
+    if not isinstance(raw, str) or not raw.strip():
+        return None
+    try:
+        naive = datetime.strptime(raw.strip(), "%Y-%m-%d %H:%M:%S")
+    except ValueError:
+        return None
+    return naive.replace(tzinfo=now.tzinfo)
+
+
 def next_schedule_start(device: Any, now: datetime) -> datetime | None:
     """Return the next scheduled mowing start at or after ``now``.
 
-    Looks ahead up to seven days across the weekly schedule slots. Returns a
-    timezone-aware datetime (matching ``now``'s tzinfo) or None when no schedule
-    is configured.
+    Prefers the value already computed by pyworxcloud
+    (``schedules["next_schedule_start"]``) and falls back to deriving it from the
+    weekly slots ourselves. Returns a timezone-aware datetime (matching ``now``'s
+    tzinfo) or None when no schedule is configured.
     """
+    from_library = _library_next_schedule_start(device, now)
+    if from_library is not None:
+        return from_library
+
     slots = schedule_slots(device)
     if not slots:
         return None
