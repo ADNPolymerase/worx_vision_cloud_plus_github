@@ -32,9 +32,9 @@ If this integration helps you, you can support Smart Service:
 - RTK robot position as a `device_tracker`.
 - Optional RTK address sensor using OpenStreetMap Nominatim reverse geocoding, disabled by default.
 - Switches for Smart edge cutting, Save the hedgehogs and schedule edge procedure.
-- Daily mowing progress, remaining progress, mowed area, lawn area and efficiency sensors when available from the API.
+- Next mowing time sensor, daily and remaining progress, today and total mowed area, lawn area and mowing efficiency sensors when available from the API.
 - Separate smart mowing automation blueprint repository.
-- Polish and English translations.
+- Polish, English, French and German translations, including localized entity states, schedule and calendar.
 - Optional raw payload entities for debugging, disabled by default.
 
 ## Installation With HACS
@@ -84,7 +84,7 @@ The exact entity list depends on what your mower reports. Typical entities inclu
 - `calendar` mowing schedule
 - `camera` RTK map
 - `device_tracker` RTK robot position
-- `sensor` battery, status, error, readiness, cloud connection, RSSI, schedule, rain delay, RTK map, RTK trail, daily progress, remaining progress, mowed area, runtime, efficiency and maintenance values
+- `sensor` battery, status, error, readiness, cloud connection, RSSI, schedule, next schedule, rain delay, RTK map, RTK trail, daily progress, remaining progress, today and total mowed area, lawn area, runtime, efficiency and maintenance values
 - `binary_sensor` online, IoT/MQTT registration, locked, rain, party mode and pause mode
 - `switch` firmware auto update, mower lock, native schedule, Smart edge cutting, Save the hedgehogs and schedule edge procedure
 - `number` rain delay, schedule time extension, lawn area and lawn perimeter
@@ -125,6 +125,10 @@ Enable this entity only if you accept sending approximate mower coordinates to t
 RTK maps and address lookups can contain precise garden geometry and coordinates. Do not publish debug dumps, Home Assistant storage files, access tokens, serial numbers, raw API responses or screenshots showing exact locations.
 
 Before opening an issue, remove private data from logs and screenshots. See [SECURITY.md](SECURITY.md).
+
+## Mowed area
+
+The mower reports its mowing figures as **covered area** (the surface the blades pass over), not unique lawn area. Because a robot mows with overlapping passes, the **Today mowed area** and **Total area mowed** sensors can legitimately exceed your lawn size, and **Daily progress** reaches 100% once the covered area matches the lawn size. **Today mowed area** is derived from a local-midnight baseline and is rebuilt after a restart or a counter reset.
 
 ## Limitations
 
