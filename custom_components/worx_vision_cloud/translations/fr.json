@@ -117,6 +117,9 @@
       "area_mowed_total": {
         "name": "Surface totale tondue"
       },
+      "estimated_area_mowed_today": {
+        "name": "Surface estimée tondue aujourd'hui"
+      },
       "lawn_area": {
         "name": "Surface de la pelouse"
       },

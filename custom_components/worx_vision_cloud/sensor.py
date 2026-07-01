@@ -290,7 +290,23 @@ def _since_reset(device, total_key: str, reset_key: str) -> int | None:
     return max(0, total - reset)
 
 
+def _work_time_total_minutes(device) -> float | None:
+    """Return the lifetime mower work time in minutes.
+
+    Prefers the MQTT-pushed statistics value (updates live while mowing) and
+    falls back to the REST product-item field when statistics are unavailable.
+    """
+    value = _statistics(device, "worktime_total")
+    if value is None:
+        value = _product_item(device, "mower_work_time")
+    return _as_float(value)
+
+
 def _mowing_efficiency(device) -> float | None:
+    # Deliberately pairs area with the REST-only work_time (not
+    # _work_time_total_minutes' live-preferring value): both figures come from
+    # the same product-item snapshot, so the ratio stays internally consistent
+    # even though it only refreshes as often as that REST endpoint does.
     area = _area_mowed_total(device)
     work_minutes = _as_float(_product_item(device, "mower_work_time"))
     if area is None or work_minutes in (None, 0):
@@ -826,8 +842,7 @@ STANDARD_SENSORS: tuple[WorxSensorDescription, ...] = (
         device_class=SensorDeviceClass.DURATION,
         state_class=SensorStateClass.TOTAL_INCREASING,
         entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda d: _statistics(d, "worktime_total")
-        or _product_item(d, "mower_work_time"),
+        value_fn=_work_time_total_minutes,
     ),
     WorxSensorDescription(
         key="mower_home_time_total",
@@ -940,6 +955,7 @@ async def async_setup_entry(
         entities.append(WorxAreaMowedTodaySensor(coordinator, entry, serial_number))
         entities.append(WorxDailyProgressSensor(coordinator, entry, serial_number))
         entities.append(WorxRemainingProgressSensor(coordinator, entry, serial_number))
+        entities.append(WorxEstimatedAreaTodaySensor(coordinator, entry, serial_number))
 
     def add_raw_entities() -> None:
         raw_entities: list[SensorEntity] = []
@@ -1168,6 +1184,90 @@ class WorxRemainingProgressSensor(_WorxDailyMowedBase):
             return None
         progress = max(0, min(100, today / lawn_area * 100))
         return round(max(0, 100 - progress), 1)
+
+
+class _WorxDailyRuntimeBase(WorxVisionEntity, RestoreSensor):
+    """Base for sensors derived from mower work time since local midnight.
+
+    Unlike area_mowed (REST-only, can go stale for hours), work time is
+    live-pushed via MQTT statistics, so a delta-from-midnight baseline here
+    tracks today's runtime in near real time.
+    """
+
+    _attr_state_class = SensorStateClass.MEASUREMENT
+
+    def __init__(self, coordinator, entry, serial_number: str, key: str) -> None:
+        """Initialize the daily runtime base sensor."""
+        super().__init__(coordinator, entry, serial_number, key)
+        self._baseline_total: float | None = None
+        self._baseline_date: str | None = None
+
+    async def async_added_to_hass(self) -> None:
+        """Restore the saved daily baseline."""
+        await super().async_added_to_hass()
+        last_state = await self.async_get_last_state()
+        if last_state is None:
+            return
+        try:
+            self._baseline_total = float(last_state.attributes["baseline_total"])
+        except (KeyError, TypeError, ValueError):
+            self._baseline_total = None
+        self._baseline_date = last_state.attributes.get("baseline_date")
+
+    def _today_runtime_minutes(self) -> float | None:
+        """Return mower work time since local midnight (minutes)."""
+        total = _work_time_total_minutes(self.device)
+        if total is None:
+            return None
+        today = dt_util.now().date().isoformat()
+        if (
+            self._baseline_total is None
+            or self._baseline_date != today
+            or total < self._baseline_total
+        ):
+            self._baseline_total = total
+            self._baseline_date = today
+        return round(max(0.0, total - self._baseline_total), 2)
+
+
+class WorxEstimatedAreaTodaySensor(_WorxDailyRuntimeBase):
+    """Estimated area mowed today, from today's runtime and average efficiency.
+
+    area_mowed only refreshes when Worx's REST product-item endpoint reports a
+    new figure, which can lag for hours during active mowing. This sensor
+    estimates today's coverage instead as today's work time (live) multiplied
+    by the mower's average mowing efficiency (m2/h, itself REST-sourced but
+    changes slowly), so it moves during the day even when Total/Today area
+    mowed are stuck waiting for Worx to recompute the real figure.
+    """
+
+    _attr_translation_key = "estimated_area_mowed_today"
+    _attr_device_class = SensorDeviceClass.AREA
+    _attr_native_unit_of_measurement = UnitOfArea.SQUARE_METERS
+    _attr_icon = "mdi:grass"
+
+    def __init__(self, coordinator, entry, serial_number: str) -> None:
+        """Initialize estimated area mowed today."""
+        super().__init__(coordinator, entry, serial_number, "estimated_area_mowed_today")
+
+    @property
+    def native_value(self) -> float | None:
+        """Return today's estimated mowed area."""
+        runtime_minutes = self._today_runtime_minutes()
+        efficiency = _mowing_efficiency(self.device)
+        if runtime_minutes is None or efficiency is None:
+            return None
+        return round(runtime_minutes / 60 * efficiency, 2)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return the baseline plus the figures used for the estimate."""
+        return {
+            "baseline_total": self._baseline_total,
+            "baseline_date": self._baseline_date,
+            "runtime_today_minutes": self._today_runtime_minutes(),
+            "mowing_efficiency": _mowing_efficiency(self.device),
+        }
 
 
 class WorxVisionAddressSensor(WorxVisionEntity, SensorEntity):

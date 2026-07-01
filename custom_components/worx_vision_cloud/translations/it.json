@@ -117,6 +117,9 @@
       "area_mowed_total": {
         "name": "Superficie totale tagliata"
       },
+      "estimated_area_mowed_today": {
+        "name": "Superficie stimata tagliata oggi"
+      },
       "lawn_area": {
         "name": "Superficie del prato"
       },

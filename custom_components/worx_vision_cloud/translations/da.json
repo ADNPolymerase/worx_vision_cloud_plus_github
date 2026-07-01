@@ -117,6 +117,9 @@
       "area_mowed_total": {
         "name": "Samlet slået areal"
       },
+      "estimated_area_mowed_today": {
+        "name": "Estimeret slået areal i dag"
+      },
       "lawn_area": {
         "name": "Plænens areal"
       },

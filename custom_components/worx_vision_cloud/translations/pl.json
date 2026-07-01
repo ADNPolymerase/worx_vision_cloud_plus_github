@@ -117,6 +117,9 @@
       "area_mowed_total": {
         "name": "Łącznie skoszona powierzchnia"
       },
+      "estimated_area_mowed_today": {
+        "name": "Szacowana powierzchnia skoszona dziś"
+      },
       "lawn_area": {
         "name": "Powierzchnia trawnika"
       },

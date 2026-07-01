@@ -117,6 +117,9 @@
       "area_mowed_total": {
         "name": "Total klippt yta"
       },
+      "estimated_area_mowed_today": {
+        "name": "Uppskattad klippt yta idag"
+      },
       "lawn_area": {
         "name": "Gräsmattans yta"
       },
