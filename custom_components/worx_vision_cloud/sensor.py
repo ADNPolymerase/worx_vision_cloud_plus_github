@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from asyncio import Task
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any, Callable
 
 from homeassistant.components.sensor import (
@@ -912,14 +912,6 @@ STANDARD_SENSORS: tuple[WorxSensorDescription, ...] = (
         value_fn=lambda d: _orientation(d, "yaw"),
     ),
     WorxSensorDescription(
-        key="last_update",
-        translation_key="last_update",
-        device_class=SensorDeviceClass.TIMESTAMP,
-        icon="mdi:clock-check",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=_last_update,
-    ),
-    WorxSensorDescription(
         key="last_update_age",
         translation_key="last_update_age",
         native_unit_of_measurement=UnitOfTime.MINUTES,
@@ -952,6 +944,7 @@ async def async_setup_entry(
         entities.append(WorxVisionAddressSensor(coordinator, entry, serial_number))
         entities.append(WorxScheduleSensor(coordinator, entry, serial_number))
         entities.append(WorxNextScheduleSensor(coordinator, entry, serial_number))
+        entities.append(WorxLastUpdateSensor(coordinator, entry, serial_number))
         entities.append(WorxAreaMowedTodaySensor(coordinator, entry, serial_number))
         entities.append(WorxDailyProgressSensor(coordinator, entry, serial_number))
         entities.append(WorxRemainingProgressSensor(coordinator, entry, serial_number))
@@ -1035,6 +1028,62 @@ class WorxNextScheduleSensor(WorxVisionEntity, SensorEntity):
     def native_value(self) -> datetime | None:
         """Return the next scheduled mowing start."""
         return next_schedule_start(self.device, dt_util.now())
+
+
+LAST_UPDATE_REPORT_INTERVAL = timedelta(hours=24)
+
+
+class WorxLastUpdateSensor(WorxVisionEntity, RestoreSensor):
+    """Timestamp of the last data received from the mower.
+
+    The underlying value changes on every push (as often as every ~20
+    seconds), which would make Home Assistant's logbook narrate a "changed"
+    entry that often. Since this sensor is meant as an occasional heartbeat
+    check rather than a live clock, it only accepts a new value once per
+    LAST_UPDATE_REPORT_INTERVAL and otherwise keeps reporting the previous
+    one, so the logbook only sees one real change per interval.
+    """
+
+    _attr_translation_key = "last_update"
+    _attr_icon = "mdi:clock-check"
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, coordinator, entry, serial_number: str) -> None:
+        """Initialize the last update sensor."""
+        super().__init__(coordinator, entry, serial_number, "last_update")
+        self._reported_value: datetime | None = None
+        self._reported_at: datetime | None = None
+
+    async def async_added_to_hass(self) -> None:
+        """Restore the last reported value and when it was accepted."""
+        await super().async_added_to_hass()
+        last_state = await self.async_get_last_state()
+        if last_state is None:
+            return
+        self._reported_value = _as_datetime(last_state.state)
+        self._reported_at = _as_datetime(last_state.attributes.get("reported_at"))
+
+    @property
+    def native_value(self) -> datetime | None:
+        """Return the last-reported update time, refreshed at most once a day."""
+        current = _last_update(self.device)
+        now = dt_util.utcnow()
+        if (
+            self._reported_value is None
+            or self._reported_at is None
+            or now - self._reported_at >= LAST_UPDATE_REPORT_INTERVAL
+        ):
+            self._reported_value = current
+            self._reported_at = now
+        return self._reported_value
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Persist when the reported value was accepted, for restarts."""
+        return {
+            "reported_at": self._reported_at.isoformat() if self._reported_at else None,
+        }
 
 
 class WorxScheduleSensor(WorxVisionEntity, SensorEntity):
