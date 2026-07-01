@@ -68,7 +68,13 @@ class WorxVisionCoordinator(DataUpdateCoordinator[dict[str, DeviceHandler]]):
             _LOGGER,
             name=DOMAIN,
             update_interval=None,
-            always_update=False,
+            # `_device_map()` returns the same DeviceHandler instances pyworxcloud
+            # already holds, and `_enrich_device()` mutates them in place (e.g. the
+            # product-item area_mowed figure). With always_update=False the
+            # coordinator compares data by equality, which is always True here
+            # (same object references), so it silently skips notifying entities
+            # even when the mutated attributes actually changed.
+            always_update=True,
         )
         self.cloud = cloud
         self._event_lock = asyncio.Lock()
