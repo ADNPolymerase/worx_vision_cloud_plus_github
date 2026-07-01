@@ -6,13 +6,14 @@ from collections import deque
 from datetime import UTC, datetime, timedelta
 import json
 import logging
-from typing import Any
+from typing import Any, Callable
 
 from aiohttp import ClientError, ClientTimeout
 
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from pyworxcloud import DeviceHandler, LandroidEvent, WorxCloud
@@ -32,6 +33,7 @@ RTK_ADDRESS_USER_AGENT = (
     "(https://github.com/SmartServicePL/Worx-Vision-Cloud-PLUS)"
 )
 PRODUCT_ITEM_CACHE_TTL = timedelta(minutes=5)
+LIVE_REFRESH_INTERVAL = timedelta(minutes=5)
 FIRMWARE_UPGRADE_CACHE_TTL = timedelta(minutes=30)
 RTK_TRAIL_MAX_POINTS = 300
 DEFAULT_ONE_TIME_MOWING_RUNTIME = 60
@@ -90,6 +92,7 @@ class WorxVisionCoordinator(DataUpdateCoordinator[dict[str, DeviceHandler]]):
             str, deque[tuple[datetime, float, float]]
         ] = {}
         self._one_time_mowing_options: dict[str, dict[str, Any]] = {}
+        self._unsub_periodic_refresh: Callable[[], None] | None = None
 
     async def async_setup(self) -> None:
         """Attach pyworxcloud callbacks."""
@@ -104,10 +107,37 @@ class WorxVisionCoordinator(DataUpdateCoordinator[dict[str, DeviceHandler]]):
         self.cloud.set_callback(LandroidEvent.DATA_RECEIVED, _on_data_received)
         self.cloud.set_callback(LandroidEvent.API, _on_api_update)
 
+        self._unsub_periodic_refresh = async_track_time_interval(
+            self.hass, self._async_periodic_device_refresh, LIVE_REFRESH_INTERVAL
+        )
+
     async def async_shutdown(self) -> None:
         """Detach callbacks."""
         self.cloud.set_callback(LandroidEvent.DATA_RECEIVED, lambda **_: None)
         self.cloud.set_callback(LandroidEvent.API, lambda **_: None)
+        if self._unsub_periodic_refresh is not None:
+            self._unsub_periodic_refresh()
+            self._unsub_periodic_refresh = None
+
+    async def _async_periodic_device_refresh(self, _now: datetime) -> None:
+        """Ask each mower for a fresh update on a fixed cadence.
+
+        Some pyworxcloud data (e.g. work-time statistics used by the daily
+        progress/area sensors) is only included in the mower's MQTT payload
+        when it responds to an explicit update request, not on every routine
+        push. Relying solely on push events or the sporadic LandroidEvent.API
+        callback can leave those figures stale for hours during active
+        mowing, so ask every known device to report in on this interval.
+        """
+        for serial_number in list((self.data or {}).keys()):
+            try:
+                await self.async_request_device_update(serial_number)
+            except Exception:  # noqa: BLE001
+                _LOGGER.debug(
+                    "Periodic refresh failed for device %s",
+                    serial_number,
+                    exc_info=True,
+                )
 
     async def _handle_push_update(self, device: DeviceHandler) -> None:
         """Merge one pushed device update."""

@@ -956,6 +956,7 @@ async def async_setup_entry(
         entities.append(WorxDailyProgressSensor(coordinator, entry, serial_number))
         entities.append(WorxRemainingProgressSensor(coordinator, entry, serial_number))
         entities.append(WorxEstimatedAreaTodaySensor(coordinator, entry, serial_number))
+        entities.append(WorxEstimatedDailyProgressSensor(coordinator, entry, serial_number))
 
     def add_raw_entities() -> None:
         raw_entities: list[SensorEntity] = []
@@ -1235,10 +1236,12 @@ class WorxEstimatedAreaTodaySensor(_WorxDailyRuntimeBase):
 
     area_mowed only refreshes when Worx's REST product-item endpoint reports a
     new figure, which can lag for hours during active mowing. This sensor
-    estimates today's coverage instead as today's work time (live) multiplied
-    by the mower's average mowing efficiency (m2/h, itself REST-sourced but
-    changes slowly), so it moves during the day even when Total/Today area
-    mowed are stuck waiting for Worx to recompute the real figure.
+    estimates today's coverage instead as today's work time (refreshed on the
+    coordinator's periodic device-update cadence, not just at session end)
+    multiplied by the mower's average mowing efficiency (m2/h, itself
+    REST-sourced but changes slowly), so it moves during the day even when
+    Total/Today area mowed are stuck waiting for Worx to recompute the real
+    figure.
     """
 
     _attr_translation_key = "estimated_area_mowed_today"
@@ -1267,6 +1270,45 @@ class WorxEstimatedAreaTodaySensor(_WorxDailyRuntimeBase):
             "baseline_date": self._baseline_date,
             "runtime_today_minutes": self._today_runtime_minutes(),
             "mowing_efficiency": _mowing_efficiency(self.device),
+        }
+
+
+class WorxEstimatedDailyProgressSensor(_WorxDailyRuntimeBase):
+    """Estimated percentage of the lawn mowed today.
+
+    Same estimate as WorxEstimatedAreaTodaySensor (today's runtime x average
+    efficiency), expressed as a percentage of the known lawn area, so it
+    moves during the day even when the REST-based daily progress is stuck.
+    """
+
+    _attr_translation_key = "estimated_daily_progress"
+    _attr_native_unit_of_measurement = PERCENTAGE
+    _attr_icon = "mdi:progress-check"
+
+    def __init__(self, coordinator, entry, serial_number: str) -> None:
+        """Initialize estimated daily progress."""
+        super().__init__(coordinator, entry, serial_number, "estimated_daily_progress")
+
+    @property
+    def native_value(self) -> float | None:
+        """Return today's estimated progress in percent."""
+        runtime_minutes = self._today_runtime_minutes()
+        efficiency = _mowing_efficiency(self.device)
+        lawn_area = _lawn_area(self.device)
+        if runtime_minutes is None or efficiency is None or lawn_area in (None, 0):
+            return None
+        estimated_area = runtime_minutes / 60 * efficiency
+        return round(max(0, min(100, estimated_area / lawn_area * 100)), 1)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return the baseline plus the figures used for the estimate."""
+        return {
+            "baseline_total": self._baseline_total,
+            "baseline_date": self._baseline_date,
+            "runtime_today_minutes": self._today_runtime_minutes(),
+            "mowing_efficiency": _mowing_efficiency(self.device),
+            "lawn_area": _lawn_area(self.device),
         }
 
 

@@ -120,6 +120,9 @@
       "estimated_area_mowed_today": {
         "name": "Geschatte vandaag gemaaid oppervlak"
       },
+      "estimated_daily_progress": {
+        "name": "Geschatte dagvoortgang"
+      },
       "lawn_area": {
         "name": "Gazonoppervlak"
       },

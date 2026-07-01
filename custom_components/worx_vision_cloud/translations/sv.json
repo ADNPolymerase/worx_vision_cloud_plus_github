@@ -120,6 +120,9 @@
       "estimated_area_mowed_today": {
         "name": "Uppskattad klippt yta idag"
       },
+      "estimated_daily_progress": {
+        "name": "Uppskattat dagligt förlopp"
+      },
       "lawn_area": {
         "name": "Gräsmattans yta"
       },

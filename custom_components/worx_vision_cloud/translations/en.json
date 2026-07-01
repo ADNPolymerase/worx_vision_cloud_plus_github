@@ -120,6 +120,9 @@
       "estimated_area_mowed_today": {
         "name": "Estimated area mowed today"
       },
+      "estimated_daily_progress": {
+        "name": "Estimated daily progress"
+      },
       "lawn_area": {
         "name": "Lawn area"
       },

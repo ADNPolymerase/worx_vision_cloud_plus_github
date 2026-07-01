@@ -120,6 +120,9 @@
       "estimated_area_mowed_today": {
         "name": "Superficie estimada cortada hoy"
       },
+      "estimated_daily_progress": {
+        "name": "Progreso diario estimado"
+      },
       "lawn_area": {
         "name": "Superficie del césped"
       },

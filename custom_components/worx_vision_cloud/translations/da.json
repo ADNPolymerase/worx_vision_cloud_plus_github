@@ -120,6 +120,9 @@
       "estimated_area_mowed_today": {
         "name": "Estimeret slået areal i dag"
       },
+      "estimated_daily_progress": {
+        "name": "Estimeret dagligt fremskridt"
+      },
       "lawn_area": {
         "name": "Plænens areal"
       },

@@ -120,6 +120,9 @@
       "estimated_area_mowed_today": {
         "name": "Geschätzte heute gemähte Fläche"
       },
+      "estimated_daily_progress": {
+        "name": "Geschätzter Tagesfortschritt"
+      },
       "lawn_area": {
         "name": "Rasenfläche"
       },

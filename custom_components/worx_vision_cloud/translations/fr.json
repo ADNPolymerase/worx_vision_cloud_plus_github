@@ -120,6 +120,9 @@
       "estimated_area_mowed_today": {
         "name": "Surface estimée tondue aujourd'hui"
       },
+      "estimated_daily_progress": {
+        "name": "Progression quotidienne estimée"
+      },
       "lawn_area": {
         "name": "Surface de la pelouse"
       },
