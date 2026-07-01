@@ -10,6 +10,12 @@ from typing import Any
 
 from homeassistant.util import slugify
 
+# Shared with lawn_mower.py and sensor.py so both agree on what "mowing" means
+# (used e.g. to track today's actual mowing time independent of Worx's own,
+# sometimes-stale work-time statistics).
+MOWING_STATUS_IDS = {7, 8, 12, 32, 110, 111}
+STARTING_STATUS_IDS = {2, 3, 33, 103}
+
 RAW_SOURCE_ATTRS = (
     "raw_dat",
     "raw_cfg",

@@ -38,6 +38,8 @@ from .const import (
 from .entity import WorxVisionEntity
 from .helpers import (
     MAX_STRING_STATE_LENGTH,
+    MOWING_STATUS_IDS,
+    STARTING_STATUS_IDS,
     get_dict_value,
     next_schedule_start,
     raw_entity_path_map,
@@ -1236,57 +1238,96 @@ class WorxRemainingProgressSensor(_WorxDailyMowedBase):
         return round(max(0, 100 - progress), 1)
 
 
-class _WorxDailyRuntimeBase(WorxVisionEntity, RestoreSensor):
-    """Base for sensors derived from mower work time since local midnight.
+def _is_mowing_now(device) -> bool:
+    """Return whether the mower is currently mowing or starting to mow.
 
-    Unlike area_mowed (REST-only, can go stale for hours), work time is
-    live-pushed via MQTT statistics, so a delta-from-midnight baseline here
-    tracks today's runtime in near real time.
+    Mirrors lawn_mower.py's own definition of the MOWING activity, so this
+    always agrees with what the lawn_mower entity itself shows.
+    """
+    status_id = get_dict_value(getattr(device, "status", {}), "id", -1)
+    return status_id in MOWING_STATUS_IDS or status_id in STARTING_STATUS_IDS
+
+
+class _WorxDailyMowingTimeBase(WorxVisionEntity, RestoreSensor):
+    """Base for sensors derived from actual mowing time since local midnight.
+
+    Worx's own work-time statistics (device.statistics / product-item) are
+    only included in some MQTT payloads and can go stale for hours during
+    active mowing (confirmed live: unchanged for 20+ minutes of continuous
+    mowing despite periodic forced refreshes). Instead, this tracks wall-clock
+    time spent in the mowing/starting status ourselves, from every coordinator
+    update, independent of whether Worx reports fresh statistics.
     """
 
     _attr_state_class = SensorStateClass.MEASUREMENT
 
     def __init__(self, coordinator, entry, serial_number: str, key: str) -> None:
-        """Initialize the daily runtime base sensor."""
+        """Initialize the daily mowing-time base sensor."""
         super().__init__(coordinator, entry, serial_number, key)
-        self._baseline_total: float | None = None
+        self._accumulated_seconds: float = 0.0
+        self._streak_started_at: datetime | None = None
         self._baseline_date: str | None = None
 
     async def async_added_to_hass(self) -> None:
-        """Restore the saved daily baseline."""
+        """Restore the saved daily accumulator."""
         await super().async_added_to_hass()
         last_state = await self.async_get_last_state()
         if last_state is None:
             return
         try:
-            self._baseline_total = float(last_state.attributes["baseline_total"])
+            self._accumulated_seconds = float(
+                last_state.attributes["accumulated_seconds"]
+            )
         except (KeyError, TypeError, ValueError):
-            self._baseline_total = None
+            self._accumulated_seconds = 0.0
+        self._streak_started_at = _as_datetime(
+            last_state.attributes.get("streak_started_at")
+        )
         self._baseline_date = last_state.attributes.get("baseline_date")
 
-    def _today_runtime_minutes(self) -> float | None:
-        """Return mower work time since local midnight (minutes)."""
-        total = _work_time_total_minutes(self.device)
-        if total is None:
-            return None
+    def _today_mowing_minutes(self) -> float:
+        """Return actual mowing time since local midnight (minutes)."""
+        now = dt_util.utcnow()
         today = dt_util.now().date().isoformat()
-        if (
-            self._baseline_total is None
-            or self._baseline_date != today
-            or total < self._baseline_total
-        ):
-            self._baseline_total = total
+        mowing_now = _is_mowing_now(self.device)
+
+        if self._baseline_date != today:
+            # New day: drop yesterday's accumulator. A streak already running
+            # across midnight restarts from now rather than trying to split it.
+            self._accumulated_seconds = 0.0
             self._baseline_date = today
-        return round(max(0.0, total - self._baseline_total), 2)
+            self._streak_started_at = now if mowing_now else None
+
+        if mowing_now and self._streak_started_at is None:
+            self._streak_started_at = now
+        elif not mowing_now and self._streak_started_at is not None:
+            self._accumulated_seconds += (now - self._streak_started_at).total_seconds()
+            self._streak_started_at = None
+
+        total_seconds = self._accumulated_seconds
+        if mowing_now and self._streak_started_at is not None:
+            total_seconds += (now - self._streak_started_at).total_seconds()
+        return round(max(0.0, total_seconds) / 60, 2)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Persist the accumulator so it survives restarts."""
+        return {
+            "accumulated_seconds": self._accumulated_seconds,
+            "streak_started_at": self._streak_started_at.isoformat()
+            if self._streak_started_at
+            else None,
+            "baseline_date": self._baseline_date,
+        }
 
 
-class WorxEstimatedAreaTodaySensor(_WorxDailyRuntimeBase):
-    """Estimated area mowed today, from today's runtime and average efficiency.
+class WorxEstimatedAreaTodaySensor(_WorxDailyMowingTimeBase):
+    """Estimated area mowed today, from today's mowing time and average efficiency.
 
     area_mowed only refreshes when Worx's REST product-item endpoint reports a
     new figure, which can lag for hours during active mowing. This sensor
-    estimates today's coverage instead as today's work time (refreshed on the
-    coordinator's periodic device-update cadence, not just at session end)
+    estimates today's coverage instead as time actually spent mowing today
+    (tracked locally, independent of Worx's own statistics reporting)
     multiplied by the mower's average mowing efficiency (m2/h, itself
     REST-sourced but changes slowly), so it moves during the day even when
     Total/Today area mowed are stuck waiting for Worx to recompute the real
@@ -1305,29 +1346,28 @@ class WorxEstimatedAreaTodaySensor(_WorxDailyRuntimeBase):
     @property
     def native_value(self) -> float | None:
         """Return today's estimated mowed area."""
-        runtime_minutes = self._today_runtime_minutes()
+        mowing_minutes = self._today_mowing_minutes()
         efficiency = _mowing_efficiency(self.device)
-        if runtime_minutes is None or efficiency is None:
+        if efficiency is None:
             return None
-        return round(runtime_minutes / 60 * efficiency, 2)
+        return round(mowing_minutes / 60 * efficiency, 2)
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        """Return the baseline plus the figures used for the estimate."""
+        """Return the accumulator plus the figures used for the estimate."""
         return {
-            "baseline_total": self._baseline_total,
-            "baseline_date": self._baseline_date,
-            "runtime_today_minutes": self._today_runtime_minutes(),
+            **super().extra_state_attributes,
+            "mowing_minutes_today": self._today_mowing_minutes(),
             "mowing_efficiency": _mowing_efficiency(self.device),
         }
 
 
-class WorxEstimatedDailyProgressSensor(_WorxDailyRuntimeBase):
+class WorxEstimatedDailyProgressSensor(_WorxDailyMowingTimeBase):
     """Estimated percentage of the lawn mowed today.
 
-    Same estimate as WorxEstimatedAreaTodaySensor (today's runtime x average
-    efficiency), expressed as a percentage of the known lawn area, so it
-    moves during the day even when the REST-based daily progress is stuck.
+    Same estimate as WorxEstimatedAreaTodaySensor (today's mowing time x
+    average efficiency), expressed as a percentage of the known lawn area, so
+    it moves during the day even when the REST-based daily progress is stuck.
     """
 
     _attr_translation_key = "estimated_daily_progress"
@@ -1341,21 +1381,20 @@ class WorxEstimatedDailyProgressSensor(_WorxDailyRuntimeBase):
     @property
     def native_value(self) -> float | None:
         """Return today's estimated progress in percent."""
-        runtime_minutes = self._today_runtime_minutes()
+        mowing_minutes = self._today_mowing_minutes()
         efficiency = _mowing_efficiency(self.device)
         lawn_area = _lawn_area(self.device)
-        if runtime_minutes is None or efficiency is None or lawn_area in (None, 0):
+        if efficiency is None or lawn_area in (None, 0):
             return None
-        estimated_area = runtime_minutes / 60 * efficiency
+        estimated_area = mowing_minutes / 60 * efficiency
         return round(max(0, min(100, estimated_area / lawn_area * 100)), 1)
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        """Return the baseline plus the figures used for the estimate."""
+        """Return the accumulator plus the figures used for the estimate."""
         return {
-            "baseline_total": self._baseline_total,
-            "baseline_date": self._baseline_date,
-            "runtime_today_minutes": self._today_runtime_minutes(),
+            **super().extra_state_attributes,
+            "mowing_minutes_today": self._today_mowing_minutes(),
             "mowing_efficiency": _mowing_efficiency(self.device),
             "lawn_area": _lawn_area(self.device),
         }
