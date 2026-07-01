@@ -1,0 +1,319 @@
+{
+  "title": "Worx Vision Cloud PLUS",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Worx Vision Cloud PLUS",
+        "description": "Gebruik dezelfde inloggegevens als in de Worx Landroid-app.",
+        "data": {
+          "email": "E-mailadres",
+          "password": "Wachtwoord",
+          "cloud": "Cloud",
+          "verify_ssl": "SSL verifiëren",
+          "expose_raw_entities": "Alle ruwe payloadvelden als entiteiten weergeven"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Kon geen verbinding maken met Worx Cloud.",
+      "invalid_auth": "Ongeldige gebruikersnaam of wachtwoord.",
+      "rate_limited": "Snelheidslimiet van Worx Cloud bereikt. Probeer het later opnieuw."
+    },
+    "abort": {
+      "already_configured": "Dit account is al geconfigureerd."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery_percent": {
+        "name": "Batterij"
+      },
+      "status": {
+        "name": "Status",
+        "state": {
+          "home": "In het laadstation",
+          "leaving_home": "Verlaat basisstation",
+          "going_home": "Terugkeer naar basisstation",
+          "mowing": "Maait",
+          "edge_cutting": "Randmaaien",
+          "charging": "Opladen",
+          "paused": "Gepauzeerd",
+          "idle": "Inactief",
+          "manual_stop": "Handmatig gestopt",
+          "rain_delay": "Regenvertraging",
+          "locked": "Vergrendeld",
+          "error": "Fout",
+          "no_error": "Geen fout",
+          "offline": "Offline"
+        }
+      },
+      "error": {
+        "name": "Fout",
+        "state": {
+          "home": "In het laadstation",
+          "leaving_home": "Verlaat basisstation",
+          "going_home": "Terugkeer naar basisstation",
+          "mowing": "Maait",
+          "edge_cutting": "Randmaaien",
+          "charging": "Opladen",
+          "paused": "Gepauzeerd",
+          "idle": "Inactief",
+          "manual_stop": "Handmatig gestopt",
+          "rain_delay": "Regenvertraging",
+          "locked": "Vergrendeld",
+          "error": "Fout",
+          "no_error": "Geen fout",
+          "offline": "Offline"
+        }
+      },
+      "rssi": {
+        "name": "RSSI"
+      },
+      "zone_current": {
+        "name": "Huidige zone"
+      },
+      "schedule": {
+        "name": "Schema"
+      },
+      "mowing_readiness": {
+        "name": "Maaigereedheid",
+        "state": {
+          "ready": "Gereed",
+          "mowing": "Maait",
+          "charging": "Opladen",
+          "battery_low": "Batterij bijna leeg",
+          "rain_delay": "Regenvertraging",
+          "error": "Fout",
+          "locked": "Vergrendeld",
+          "offline": "Offline"
+        }
+      },
+      "cloud_connection": {
+        "name": "Cloudverbinding",
+        "state": {
+          "ok": "Verbonden",
+          "check": "Controleren",
+          "offline": "Offline"
+        }
+      },
+      "api_capabilities": {
+        "name": "API-mogelijkheden"
+      },
+      "push_notifications": {
+        "name": "Pushmeldingen"
+      },
+      "daily_progress": {
+        "name": "Dagvoortgang"
+      },
+      "remaining_progress": {
+        "name": "Nog te maaien"
+      },
+      "area_mowed_today": {
+        "name": "Vandaag gemaaid oppervlak"
+      },
+      "next_schedule": {
+        "name": "Volgende maaibeurt"
+      },
+      "area_mowed_total": {
+        "name": "Totaal gemaaid oppervlak"
+      },
+      "lawn_area": {
+        "name": "Gazonoppervlak"
+      },
+      "mowing_efficiency": {
+        "name": "Maai-efficiëntie"
+      },
+      "rtk_map": {
+        "name": "RTK-kaart"
+      },
+      "rtk_trail_points": {
+        "name": "RTK-spoorpunten"
+      },
+      "rtk_address": {
+        "name": "RTK-adres"
+      },
+      "rain_delay": {
+        "name": "Regenvertraging"
+      },
+      "rain_remaining": {
+        "name": "Resterende regenvertraging"
+      },
+      "battery_voltage": {
+        "name": "Batterijspanning"
+      },
+      "battery_temperature": {
+        "name": "Batterijtemperatuur"
+      },
+      "battery_cycles_total": {
+        "name": "Batterijcycli (totaal)"
+      },
+      "battery_cycles_since_reset": {
+        "name": "Batterijcycli sinds reset"
+      },
+      "battery_cycles_reset_at": {
+        "name": "Laatste reset batterijcycli"
+      },
+      "blade_runtime_total": {
+        "name": "Meslooptijd (totaal)"
+      },
+      "blade_runtime_current": {
+        "name": "Meslooptijd (huidig)"
+      },
+      "blade_runtime_reset_at": {
+        "name": "Laatste reset meslooptijd"
+      },
+      "mower_runtime_total": {
+        "name": "Totale looptijd"
+      },
+      "mower_home_time_total": {
+        "name": "Totale tijd in basisstation"
+      },
+      "mower_charging_time_total": {
+        "name": "Totale oplaadtijd"
+      },
+      "mower_error_time_total": {
+        "name": "Totale tijd in fout"
+      },
+      "maintenance_status": {
+        "name": "Onderhoudsstatus",
+        "state": {
+          "ok": "OK",
+          "blade_service_due": "Mesonderhoud nodig",
+          "battery_service_due": "Batterijonderhoud nodig"
+        }
+      },
+      "pitch": {
+        "name": "Pitch"
+      },
+      "roll": {
+        "name": "Roll"
+      },
+      "yaw": {
+        "name": "Yaw"
+      },
+      "last_update": {
+        "name": "Laatste update"
+      },
+      "last_update_age": {
+        "name": "Tijd sinds laatste update"
+      }
+    },
+    "binary_sensor": {
+      "online": {
+        "name": "Online"
+      },
+      "iot_registered": {
+        "name": "IoT geregistreerd"
+      },
+      "mqtt_registered": {
+        "name": "MQTT geregistreerd"
+      },
+      "locked": {
+        "name": "Vergrendeld"
+      },
+      "rain_triggered": {
+        "name": "Regen gedetecteerd"
+      },
+      "robot_lifted": {
+        "name": "Robot opgetild"
+      },
+      "off_limits_enabled": {
+        "name": "Verboden zones ingeschakeld"
+      },
+      "acs_enabled": {
+        "name": "ACS ingeschakeld"
+      },
+      "party_mode_enabled": {
+        "name": "Feestmodus ingeschakeld"
+      },
+      "pause_mode_enabled": {
+        "name": "Pauzemodus ingeschakeld"
+      },
+      "smart_edge_cut": {
+        "name": "Slim randmaaien"
+      },
+      "save_hedgehogs": {
+        "name": "Egels redden"
+      }
+    },
+    "switch": {
+      "firmware_auto_upgrade": {
+        "name": "Automatische firmware-update"
+      },
+      "lock": {
+        "name": "Vergrendelen"
+      },
+      "native_schedule": {
+        "name": "Native planning"
+      },
+      "smart_edge_cut": {
+        "name": "Slim randmaaien"
+      },
+      "save_hedgehogs": {
+        "name": "Egels redden"
+      },
+      "one_time_mowing_edge_cut": {
+        "name": "Randmaaien"
+      }
+    },
+    "button": {
+      "refresh": {
+        "name": "Vernieuwen"
+      },
+      "reset_blade_counter": {
+        "name": "Meslooptijd resetten"
+      },
+      "reset_battery_cycle_counter": {
+        "name": "Batterijcycli resetten"
+      },
+      "start_edge_cut": {
+        "name": "Randmaaien starten"
+      },
+      "start_one_time_mowing": {
+        "name": "Eenmalig maaien starten"
+      }
+    },
+    "number": {
+      "rain_delay_minutes": {
+        "name": "Regenvertraging"
+      },
+      "time_extension": {
+        "name": "Tijdsverlenging"
+      },
+      "lawn_area": {
+        "name": "Gazonoppervlak"
+      },
+      "lawn_perimeter": {
+        "name": "Gazonomtrek"
+      },
+      "one_time_mowing_runtime": {
+        "name": "Duur eenmalig maaien"
+      }
+    },
+    "select": {
+      "one_time_mowing_zones": {
+        "name": "Maaizone"
+      }
+    },
+    "update": {
+      "firmware": {
+        "name": "Firmware"
+      }
+    },
+    "camera": {
+      "rtk_map_camera": {
+        "name": "RTK-kaart"
+      }
+    },
+    "calendar": {
+      "schedule": {
+        "name": "Maaischema"
+      }
+    },
+    "device_tracker": {
+      "rtk_position": {
+        "name": "RTK-positie"
+      }
+    }
+  }
+}

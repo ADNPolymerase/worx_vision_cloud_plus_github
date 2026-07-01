@@ -1,0 +1,319 @@
+{
+  "title": "Worx Vision Cloud PLUS",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Worx Vision Cloud PLUS",
+        "description": "Brug samme login som i Worx Landroid-appen.",
+        "data": {
+          "email": "E-mail",
+          "password": "Adgangskode",
+          "cloud": "Sky",
+          "verify_ssl": "Bekræft SSL",
+          "expose_raw_entities": "Vis alle rå datafelter som enheder"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Kunne ikke oprette forbindelse til Worx Cloud.",
+      "invalid_auth": "Ugyldigt brugernavn eller adgangskode.",
+      "rate_limited": "Worx Cloud-anmodningsgrænse nået. Prøv igen senere."
+    },
+    "abort": {
+      "already_configured": "Denne konto er allerede konfigureret."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery_percent": {
+        "name": "Batteri"
+      },
+      "status": {
+        "name": "Status",
+        "state": {
+          "home": "Ved basestation",
+          "leaving_home": "Forlader basestation",
+          "going_home": "På vej til basestation",
+          "mowing": "Slår græs",
+          "edge_cutting": "Kantklipning",
+          "charging": "Oplader",
+          "paused": "Sat på pause",
+          "idle": "Inaktiv",
+          "manual_stop": "Manuelt stoppet",
+          "rain_delay": "Regnforsinkelse",
+          "locked": "Låst",
+          "error": "Fejl",
+          "no_error": "Ingen fejl",
+          "offline": "Offline"
+        }
+      },
+      "error": {
+        "name": "Fejl",
+        "state": {
+          "home": "Ved basestation",
+          "leaving_home": "Forlader basestation",
+          "going_home": "På vej til basestation",
+          "mowing": "Slår græs",
+          "edge_cutting": "Kantklipning",
+          "charging": "Oplader",
+          "paused": "Sat på pause",
+          "idle": "Inaktiv",
+          "manual_stop": "Manuelt stoppet",
+          "rain_delay": "Regnforsinkelse",
+          "locked": "Låst",
+          "error": "Fejl",
+          "no_error": "Ingen fejl",
+          "offline": "Offline"
+        }
+      },
+      "rssi": {
+        "name": "RSSI"
+      },
+      "zone_current": {
+        "name": "Nuværende zone"
+      },
+      "schedule": {
+        "name": "Tidsplan"
+      },
+      "mowing_readiness": {
+        "name": "Klippeparathed",
+        "state": {
+          "ready": "Klar",
+          "mowing": "Slår græs",
+          "charging": "Oplader",
+          "battery_low": "Lavt batteriniveau",
+          "rain_delay": "Regnforsinkelse",
+          "error": "Fejl",
+          "locked": "Låst",
+          "offline": "Offline"
+        }
+      },
+      "cloud_connection": {
+        "name": "Skyforbindelse",
+        "state": {
+          "ok": "Forbundet",
+          "check": "Kontrollerer",
+          "offline": "Offline"
+        }
+      },
+      "api_capabilities": {
+        "name": "API-funktioner"
+      },
+      "push_notifications": {
+        "name": "Push-notifikationer"
+      },
+      "daily_progress": {
+        "name": "Dagens fremskridt"
+      },
+      "remaining_progress": {
+        "name": "Resterende at slå"
+      },
+      "area_mowed_today": {
+        "name": "Areal slået i dag"
+      },
+      "next_schedule": {
+        "name": "Næste slåning"
+      },
+      "area_mowed_total": {
+        "name": "Samlet slået areal"
+      },
+      "lawn_area": {
+        "name": "Plænens areal"
+      },
+      "mowing_efficiency": {
+        "name": "Klippeeffektivitet"
+      },
+      "rtk_map": {
+        "name": "RTK-kort"
+      },
+      "rtk_trail_points": {
+        "name": "RTK-sporpunkter"
+      },
+      "rtk_address": {
+        "name": "RTK-adresse"
+      },
+      "rain_delay": {
+        "name": "Regnforsinkelse"
+      },
+      "rain_remaining": {
+        "name": "Resterende regnforsinkelse"
+      },
+      "battery_voltage": {
+        "name": "Batterispænding"
+      },
+      "battery_temperature": {
+        "name": "Batteritemperatur"
+      },
+      "battery_cycles_total": {
+        "name": "Battericyklusser (i alt)"
+      },
+      "battery_cycles_since_reset": {
+        "name": "Battericyklusser siden nulstilling"
+      },
+      "battery_cycles_reset_at": {
+        "name": "Seneste nulstilling af battericyklusser"
+      },
+      "blade_runtime_total": {
+        "name": "Knivenes driftstid (i alt)"
+      },
+      "blade_runtime_current": {
+        "name": "Knivenes driftstid (aktuel)"
+      },
+      "blade_runtime_reset_at": {
+        "name": "Seneste nulstilling af knivtid"
+      },
+      "mower_runtime_total": {
+        "name": "Samlet driftstid"
+      },
+      "mower_home_time_total": {
+        "name": "Samlet tid ved basestation"
+      },
+      "mower_charging_time_total": {
+        "name": "Samlet opladningstid"
+      },
+      "mower_error_time_total": {
+        "name": "Samlet tid i fejl"
+      },
+      "maintenance_status": {
+        "name": "Vedligeholdelsesstatus",
+        "state": {
+          "ok": "OK",
+          "blade_service_due": "Knivservice påkrævet",
+          "battery_service_due": "Batteriservice påkrævet"
+        }
+      },
+      "pitch": {
+        "name": "Pitch"
+      },
+      "roll": {
+        "name": "Roll"
+      },
+      "yaw": {
+        "name": "Yaw"
+      },
+      "last_update": {
+        "name": "Seneste opdatering"
+      },
+      "last_update_age": {
+        "name": "Tid siden seneste opdatering"
+      }
+    },
+    "binary_sensor": {
+      "online": {
+        "name": "Online"
+      },
+      "iot_registered": {
+        "name": "IoT registreret"
+      },
+      "mqtt_registered": {
+        "name": "MQTT registreret"
+      },
+      "locked": {
+        "name": "Låst"
+      },
+      "rain_triggered": {
+        "name": "Regn registreret"
+      },
+      "robot_lifted": {
+        "name": "Robot løftet"
+      },
+      "off_limits_enabled": {
+        "name": "Forbudte zoner aktiveret"
+      },
+      "acs_enabled": {
+        "name": "ACS aktiveret"
+      },
+      "party_mode_enabled": {
+        "name": "Festtilstand aktiveret"
+      },
+      "pause_mode_enabled": {
+        "name": "Pausetilstand aktiveret"
+      },
+      "smart_edge_cut": {
+        "name": "Smart kantklipning"
+      },
+      "save_hedgehogs": {
+        "name": "Red pindsvinene"
+      }
+    },
+    "switch": {
+      "firmware_auto_upgrade": {
+        "name": "Automatisk firmwareopdatering"
+      },
+      "lock": {
+        "name": "Lås"
+      },
+      "native_schedule": {
+        "name": "Indbygget tidsplan"
+      },
+      "smart_edge_cut": {
+        "name": "Smart kantklipning"
+      },
+      "save_hedgehogs": {
+        "name": "Red pindsvinene"
+      },
+      "one_time_mowing_edge_cut": {
+        "name": "Kantklipning"
+      }
+    },
+    "button": {
+      "refresh": {
+        "name": "Opdater"
+      },
+      "reset_blade_counter": {
+        "name": "Nulstil knivtid"
+      },
+      "reset_battery_cycle_counter": {
+        "name": "Nulstil battericyklusser"
+      },
+      "start_edge_cut": {
+        "name": "Start kantklipning"
+      },
+      "start_one_time_mowing": {
+        "name": "Start engangsslåning"
+      }
+    },
+    "number": {
+      "rain_delay_minutes": {
+        "name": "Regnforsinkelse"
+      },
+      "time_extension": {
+        "name": "Tidsforlængelse"
+      },
+      "lawn_area": {
+        "name": "Plænens areal"
+      },
+      "lawn_perimeter": {
+        "name": "Plænens omkreds"
+      },
+      "one_time_mowing_runtime": {
+        "name": "Varighed af engangsslåning"
+      }
+    },
+    "select": {
+      "one_time_mowing_zones": {
+        "name": "Klippezone"
+      }
+    },
+    "update": {
+      "firmware": {
+        "name": "Firmware"
+      }
+    },
+    "camera": {
+      "rtk_map_camera": {
+        "name": "RTK-kort"
+      }
+    },
+    "calendar": {
+      "schedule": {
+        "name": "Slåningsplan"
+      }
+    },
+    "device_tracker": {
+      "rtk_position": {
+        "name": "RTK-position"
+      }
+    }
+  }
+}

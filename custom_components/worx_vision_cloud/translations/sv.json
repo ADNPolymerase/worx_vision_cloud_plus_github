@@ -1,0 +1,319 @@
+{
+  "title": "Worx Vision Cloud PLUS",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Worx Vision Cloud PLUS",
+        "description": "Använd samma inloggning som i Worx Landroid-appen.",
+        "data": {
+          "email": "E-post",
+          "password": "Lösenord",
+          "cloud": "Moln",
+          "verify_ssl": "Verifiera SSL",
+          "expose_raw_entities": "Exponera alla råa payload-fält som entiteter"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Det gick inte att ansluta till Worx Cloud.",
+      "invalid_auth": "Ogiltigt användarnamn eller lösenord.",
+      "rate_limited": "Gränsen för Worx Cloud-förfrågningar nådd. Försök igen senare."
+    },
+    "abort": {
+      "already_configured": "Det här kontot är redan konfigurerat."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery_percent": {
+        "name": "Batteri"
+      },
+      "status": {
+        "name": "Status",
+        "state": {
+          "home": "Vid basstationen",
+          "leaving_home": "Lämnar basstationen",
+          "going_home": "Återvänder till basstationen",
+          "mowing": "Klipper",
+          "edge_cutting": "Kantklippning",
+          "charging": "Laddar",
+          "paused": "Pausad",
+          "idle": "Inaktiv",
+          "manual_stop": "Manuellt stoppad",
+          "rain_delay": "Regnfördröjning",
+          "locked": "Låst",
+          "error": "Fel",
+          "no_error": "Inget fel",
+          "offline": "Offline"
+        }
+      },
+      "error": {
+        "name": "Fel",
+        "state": {
+          "home": "Vid basstationen",
+          "leaving_home": "Lämnar basstationen",
+          "going_home": "Återvänder till basstationen",
+          "mowing": "Klipper",
+          "edge_cutting": "Kantklippning",
+          "charging": "Laddar",
+          "paused": "Pausad",
+          "idle": "Inaktiv",
+          "manual_stop": "Manuellt stoppad",
+          "rain_delay": "Regnfördröjning",
+          "locked": "Låst",
+          "error": "Fel",
+          "no_error": "Inget fel",
+          "offline": "Offline"
+        }
+      },
+      "rssi": {
+        "name": "RSSI"
+      },
+      "zone_current": {
+        "name": "Aktuell zon"
+      },
+      "schedule": {
+        "name": "Schema"
+      },
+      "mowing_readiness": {
+        "name": "Klippberedskap",
+        "state": {
+          "ready": "Redo",
+          "mowing": "Klipper",
+          "charging": "Laddar",
+          "battery_low": "Låg batterinivå",
+          "rain_delay": "Regnfördröjning",
+          "error": "Fel",
+          "locked": "Låst",
+          "offline": "Offline"
+        }
+      },
+      "cloud_connection": {
+        "name": "Molnanslutning",
+        "state": {
+          "ok": "Ansluten",
+          "check": "Kontrollerar",
+          "offline": "Offline"
+        }
+      },
+      "api_capabilities": {
+        "name": "API-funktioner"
+      },
+      "push_notifications": {
+        "name": "Push-aviseringar"
+      },
+      "daily_progress": {
+        "name": "Dagens förlopp"
+      },
+      "remaining_progress": {
+        "name": "Kvar att klippa"
+      },
+      "area_mowed_today": {
+        "name": "Klippt yta idag"
+      },
+      "next_schedule": {
+        "name": "Nästa klippning"
+      },
+      "area_mowed_total": {
+        "name": "Total klippt yta"
+      },
+      "lawn_area": {
+        "name": "Gräsmattans yta"
+      },
+      "mowing_efficiency": {
+        "name": "Klippeffektivitet"
+      },
+      "rtk_map": {
+        "name": "RTK-karta"
+      },
+      "rtk_trail_points": {
+        "name": "RTK-spårpunkter"
+      },
+      "rtk_address": {
+        "name": "RTK-adress"
+      },
+      "rain_delay": {
+        "name": "Regnfördröjning"
+      },
+      "rain_remaining": {
+        "name": "Återstående regnfördröjning"
+      },
+      "battery_voltage": {
+        "name": "Batterispänning"
+      },
+      "battery_temperature": {
+        "name": "Batteritemperatur"
+      },
+      "battery_cycles_total": {
+        "name": "Battericykler (totalt)"
+      },
+      "battery_cycles_since_reset": {
+        "name": "Battericykler sedan återställning"
+      },
+      "battery_cycles_reset_at": {
+        "name": "Senaste återställning av battericykler"
+      },
+      "blade_runtime_total": {
+        "name": "Knivarnas gångtid (totalt)"
+      },
+      "blade_runtime_current": {
+        "name": "Knivarnas gångtid (aktuell)"
+      },
+      "blade_runtime_reset_at": {
+        "name": "Senaste återställning av knivtid"
+      },
+      "mower_runtime_total": {
+        "name": "Total gångtid"
+      },
+      "mower_home_time_total": {
+        "name": "Total tid vid basstationen"
+      },
+      "mower_charging_time_total": {
+        "name": "Total laddningstid"
+      },
+      "mower_error_time_total": {
+        "name": "Total tid i fel"
+      },
+      "maintenance_status": {
+        "name": "Underhållsstatus",
+        "state": {
+          "ok": "OK",
+          "blade_service_due": "Knivservice krävs",
+          "battery_service_due": "Batteriservice krävs"
+        }
+      },
+      "pitch": {
+        "name": "Pitch"
+      },
+      "roll": {
+        "name": "Roll"
+      },
+      "yaw": {
+        "name": "Yaw"
+      },
+      "last_update": {
+        "name": "Senaste uppdatering"
+      },
+      "last_update_age": {
+        "name": "Tid sedan senaste uppdatering"
+      }
+    },
+    "binary_sensor": {
+      "online": {
+        "name": "Online"
+      },
+      "iot_registered": {
+        "name": "IoT registrerad"
+      },
+      "mqtt_registered": {
+        "name": "MQTT registrerad"
+      },
+      "locked": {
+        "name": "Låst"
+      },
+      "rain_triggered": {
+        "name": "Regn upptäckt"
+      },
+      "robot_lifted": {
+        "name": "Robot upplyft"
+      },
+      "off_limits_enabled": {
+        "name": "Förbjudna zoner aktiverade"
+      },
+      "acs_enabled": {
+        "name": "ACS aktiverat"
+      },
+      "party_mode_enabled": {
+        "name": "Festläge aktiverat"
+      },
+      "pause_mode_enabled": {
+        "name": "Pausläge aktiverat"
+      },
+      "smart_edge_cut": {
+        "name": "Smart kantklippning"
+      },
+      "save_hedgehogs": {
+        "name": "Rädda igelkottarna"
+      }
+    },
+    "switch": {
+      "firmware_auto_upgrade": {
+        "name": "Automatisk firmware-uppdatering"
+      },
+      "lock": {
+        "name": "Lås"
+      },
+      "native_schedule": {
+        "name": "Inbyggt schema"
+      },
+      "smart_edge_cut": {
+        "name": "Smart kantklippning"
+      },
+      "save_hedgehogs": {
+        "name": "Rädda igelkottarna"
+      },
+      "one_time_mowing_edge_cut": {
+        "name": "Kantklippning"
+      }
+    },
+    "button": {
+      "refresh": {
+        "name": "Uppdatera"
+      },
+      "reset_blade_counter": {
+        "name": "Återställ knivtid"
+      },
+      "reset_battery_cycle_counter": {
+        "name": "Återställ battericykler"
+      },
+      "start_edge_cut": {
+        "name": "Starta kantklippning"
+      },
+      "start_one_time_mowing": {
+        "name": "Starta engångsklippning"
+      }
+    },
+    "number": {
+      "rain_delay_minutes": {
+        "name": "Regnfördröjning"
+      },
+      "time_extension": {
+        "name": "Tidsförlängning"
+      },
+      "lawn_area": {
+        "name": "Gräsmattans yta"
+      },
+      "lawn_perimeter": {
+        "name": "Gräsmattans omkrets"
+      },
+      "one_time_mowing_runtime": {
+        "name": "Varaktighet för engångsklippning"
+      }
+    },
+    "select": {
+      "one_time_mowing_zones": {
+        "name": "Klippzon"
+      }
+    },
+    "update": {
+      "firmware": {
+        "name": "Firmware"
+      }
+    },
+    "camera": {
+      "rtk_map_camera": {
+        "name": "RTK-karta"
+      }
+    },
+    "calendar": {
+      "schedule": {
+        "name": "Klippschema"
+      }
+    },
+    "device_tracker": {
+      "rtk_position": {
+        "name": "RTK-position"
+      }
+    }
+  }
+}

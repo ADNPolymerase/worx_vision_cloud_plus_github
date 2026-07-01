@@ -1,0 +1,319 @@
+{
+  "title": "Worx Vision Cloud PLUS",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Worx Vision Cloud PLUS",
+        "description": "Usa le stesse credenziali dell'app Worx Landroid.",
+        "data": {
+          "email": "E-mail",
+          "password": "Password",
+          "cloud": "Cloud",
+          "verify_ssl": "Verifica SSL",
+          "expose_raw_entities": "Esponi tutti i campi payload grezzi come entità"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Impossibile connettersi a Worx Cloud.",
+      "invalid_auth": "Nome utente o password non validi.",
+      "rate_limited": "Limite di richieste Worx Cloud raggiunto. Riprova più tardi."
+    },
+    "abort": {
+      "already_configured": "Questo account è già configurato."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery_percent": {
+        "name": "Batteria"
+      },
+      "status": {
+        "name": "Stato",
+        "state": {
+          "home": "In base",
+          "leaving_home": "Uscita dalla base",
+          "going_home": "Rientro alla base",
+          "mowing": "In taglio",
+          "edge_cutting": "Taglio bordi",
+          "charging": "In carica",
+          "paused": "In pausa",
+          "idle": "Inattivo",
+          "manual_stop": "Arresto manuale",
+          "rain_delay": "Ritardo pioggia",
+          "locked": "Bloccato",
+          "error": "Errore",
+          "no_error": "Nessun errore",
+          "offline": "Offline"
+        }
+      },
+      "error": {
+        "name": "Errore",
+        "state": {
+          "home": "In base",
+          "leaving_home": "Uscita dalla base",
+          "going_home": "Rientro alla base",
+          "mowing": "In taglio",
+          "edge_cutting": "Taglio bordi",
+          "charging": "In carica",
+          "paused": "In pausa",
+          "idle": "Inattivo",
+          "manual_stop": "Arresto manuale",
+          "rain_delay": "Ritardo pioggia",
+          "locked": "Bloccato",
+          "error": "Errore",
+          "no_error": "Nessun errore",
+          "offline": "Offline"
+        }
+      },
+      "rssi": {
+        "name": "RSSI"
+      },
+      "zone_current": {
+        "name": "Zona attuale"
+      },
+      "schedule": {
+        "name": "Programma"
+      },
+      "mowing_readiness": {
+        "name": "Prontezza al taglio",
+        "state": {
+          "ready": "Pronto",
+          "mowing": "In taglio",
+          "charging": "In carica",
+          "battery_low": "Batteria scarica",
+          "rain_delay": "Ritardo pioggia",
+          "error": "Errore",
+          "locked": "Bloccato",
+          "offline": "Offline"
+        }
+      },
+      "cloud_connection": {
+        "name": "Connessione al cloud",
+        "state": {
+          "ok": "Connesso",
+          "check": "Verifica in corso",
+          "offline": "Offline"
+        }
+      },
+      "api_capabilities": {
+        "name": "Funzionalità API"
+      },
+      "push_notifications": {
+        "name": "Notifiche push"
+      },
+      "daily_progress": {
+        "name": "Avanzamento giornaliero"
+      },
+      "remaining_progress": {
+        "name": "Rimanente da tagliare"
+      },
+      "area_mowed_today": {
+        "name": "Superficie tagliata oggi"
+      },
+      "next_schedule": {
+        "name": "Prossimo taglio"
+      },
+      "area_mowed_total": {
+        "name": "Superficie totale tagliata"
+      },
+      "lawn_area": {
+        "name": "Superficie del prato"
+      },
+      "mowing_efficiency": {
+        "name": "Efficienza di taglio"
+      },
+      "rtk_map": {
+        "name": "Mappa RTK"
+      },
+      "rtk_trail_points": {
+        "name": "Punti traccia RTK"
+      },
+      "rtk_address": {
+        "name": "Indirizzo RTK"
+      },
+      "rain_delay": {
+        "name": "Ritardo pioggia"
+      },
+      "rain_remaining": {
+        "name": "Ritardo pioggia residuo"
+      },
+      "battery_voltage": {
+        "name": "Tensione della batteria"
+      },
+      "battery_temperature": {
+        "name": "Temperatura della batteria"
+      },
+      "battery_cycles_total": {
+        "name": "Cicli batteria (totale)"
+      },
+      "battery_cycles_since_reset": {
+        "name": "Cicli batteria dall'ultimo reset"
+      },
+      "battery_cycles_reset_at": {
+        "name": "Ultimo reset cicli batteria"
+      },
+      "blade_runtime_total": {
+        "name": "Tempo di funzionamento lame (totale)"
+      },
+      "blade_runtime_current": {
+        "name": "Tempo di funzionamento lame (attuale)"
+      },
+      "blade_runtime_reset_at": {
+        "name": "Ultimo reset tempo lame"
+      },
+      "mower_runtime_total": {
+        "name": "Tempo di funzionamento totale"
+      },
+      "mower_home_time_total": {
+        "name": "Tempo totale in base"
+      },
+      "mower_charging_time_total": {
+        "name": "Tempo totale in carica"
+      },
+      "mower_error_time_total": {
+        "name": "Tempo totale in errore"
+      },
+      "maintenance_status": {
+        "name": "Stato manutenzione",
+        "state": {
+          "ok": "OK",
+          "blade_service_due": "Manutenzione lame necessaria",
+          "battery_service_due": "Manutenzione batteria necessaria"
+        }
+      },
+      "pitch": {
+        "name": "Beccheggio"
+      },
+      "roll": {
+        "name": "Rollio"
+      },
+      "yaw": {
+        "name": "Imbardata"
+      },
+      "last_update": {
+        "name": "Ultimo aggiornamento"
+      },
+      "last_update_age": {
+        "name": "Tempo dall'ultimo aggiornamento"
+      }
+    },
+    "binary_sensor": {
+      "online": {
+        "name": "Online"
+      },
+      "iot_registered": {
+        "name": "IoT registrato"
+      },
+      "mqtt_registered": {
+        "name": "MQTT registrato"
+      },
+      "locked": {
+        "name": "Bloccato"
+      },
+      "rain_triggered": {
+        "name": "Pioggia rilevata"
+      },
+      "robot_lifted": {
+        "name": "Robot sollevato"
+      },
+      "off_limits_enabled": {
+        "name": "Zone vietate attive"
+      },
+      "acs_enabled": {
+        "name": "ACS attivo"
+      },
+      "party_mode_enabled": {
+        "name": "Modalità festa attiva"
+      },
+      "pause_mode_enabled": {
+        "name": "Modalità pausa attiva"
+      },
+      "smart_edge_cut": {
+        "name": "Taglio bordi intelligente"
+      },
+      "save_hedgehogs": {
+        "name": "Salva i ricci"
+      }
+    },
+    "switch": {
+      "firmware_auto_upgrade": {
+        "name": "Aggiornamento automatico firmware"
+      },
+      "lock": {
+        "name": "Blocco"
+      },
+      "native_schedule": {
+        "name": "Programma nativo"
+      },
+      "smart_edge_cut": {
+        "name": "Taglio bordi intelligente"
+      },
+      "save_hedgehogs": {
+        "name": "Salva i ricci"
+      },
+      "one_time_mowing_edge_cut": {
+        "name": "Taglio bordi"
+      }
+    },
+    "button": {
+      "refresh": {
+        "name": "Aggiorna"
+      },
+      "reset_blade_counter": {
+        "name": "Reimposta tempo lame"
+      },
+      "reset_battery_cycle_counter": {
+        "name": "Reimposta cicli batteria"
+      },
+      "start_edge_cut": {
+        "name": "Avvia taglio bordi"
+      },
+      "start_one_time_mowing": {
+        "name": "Avvia taglio singolo"
+      }
+    },
+    "number": {
+      "rain_delay_minutes": {
+        "name": "Ritardo pioggia"
+      },
+      "time_extension": {
+        "name": "Estensione tempo"
+      },
+      "lawn_area": {
+        "name": "Superficie del prato"
+      },
+      "lawn_perimeter": {
+        "name": "Perimetro del prato"
+      },
+      "one_time_mowing_runtime": {
+        "name": "Durata taglio singolo"
+      }
+    },
+    "select": {
+      "one_time_mowing_zones": {
+        "name": "Zona di taglio"
+      }
+    },
+    "update": {
+      "firmware": {
+        "name": "Firmware"
+      }
+    },
+    "camera": {
+      "rtk_map_camera": {
+        "name": "Mappa RTK"
+      }
+    },
+    "calendar": {
+      "schedule": {
+        "name": "Programma di taglio"
+      }
+    },
+    "device_tracker": {
+      "rtk_position": {
+        "name": "Posizione RTK"
+      }
+    }
+  }
+}

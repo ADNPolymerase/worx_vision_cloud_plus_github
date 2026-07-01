@@ -1,0 +1,319 @@
+{
+  "title": "Worx Vision Cloud PLUS",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Worx Vision Cloud PLUS",
+        "description": "Usa las mismas credenciales que en la app Worx Landroid.",
+        "data": {
+          "email": "Correo electrónico",
+          "password": "Contraseña",
+          "cloud": "Nube",
+          "verify_ssl": "Verificar SSL",
+          "expose_raw_entities": "Exponer todos los campos de datos brutos como entidades"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "No se pudo conectar con Worx Cloud.",
+      "invalid_auth": "Usuario o contraseña incorrectos.",
+      "rate_limited": "Límite de solicitudes de Worx Cloud alcanzado. Inténtalo más tarde."
+    },
+    "abort": {
+      "already_configured": "Esta cuenta ya está configurada."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery_percent": {
+        "name": "Batería"
+      },
+      "status": {
+        "name": "Estado",
+        "state": {
+          "home": "En la base",
+          "leaving_home": "Saliendo de la base",
+          "going_home": "Regresando a la base",
+          "mowing": "Cortando",
+          "edge_cutting": "Corte de bordes",
+          "charging": "Cargando",
+          "paused": "En pausa",
+          "idle": "Inactivo",
+          "manual_stop": "Detenido manualmente",
+          "rain_delay": "Retraso por lluvia",
+          "locked": "Bloqueado",
+          "error": "Error",
+          "no_error": "Sin errores",
+          "offline": "Sin conexión"
+        }
+      },
+      "error": {
+        "name": "Error",
+        "state": {
+          "home": "En la base",
+          "leaving_home": "Saliendo de la base",
+          "going_home": "Regresando a la base",
+          "mowing": "Cortando",
+          "edge_cutting": "Corte de bordes",
+          "charging": "Cargando",
+          "paused": "En pausa",
+          "idle": "Inactivo",
+          "manual_stop": "Detenido manualmente",
+          "rain_delay": "Retraso por lluvia",
+          "locked": "Bloqueado",
+          "error": "Error",
+          "no_error": "Sin errores",
+          "offline": "Sin conexión"
+        }
+      },
+      "rssi": {
+        "name": "RSSI"
+      },
+      "zone_current": {
+        "name": "Zona actual"
+      },
+      "schedule": {
+        "name": "Programación"
+      },
+      "mowing_readiness": {
+        "name": "Disponibilidad para cortar",
+        "state": {
+          "ready": "Lista",
+          "mowing": "Cortando",
+          "charging": "Cargando",
+          "battery_low": "Batería baja",
+          "rain_delay": "Retraso por lluvia",
+          "error": "Error",
+          "locked": "Bloqueado",
+          "offline": "Sin conexión"
+        }
+      },
+      "cloud_connection": {
+        "name": "Conexión a la nube",
+        "state": {
+          "ok": "Conectado",
+          "check": "Comprobando",
+          "offline": "Sin conexión"
+        }
+      },
+      "api_capabilities": {
+        "name": "Capacidades de la API"
+      },
+      "push_notifications": {
+        "name": "Notificaciones push"
+      },
+      "daily_progress": {
+        "name": "Progreso diario"
+      },
+      "remaining_progress": {
+        "name": "Restante por cortar"
+      },
+      "area_mowed_today": {
+        "name": "Superficie cortada hoy"
+      },
+      "next_schedule": {
+        "name": "Próximo corte"
+      },
+      "area_mowed_total": {
+        "name": "Superficie total cortada"
+      },
+      "lawn_area": {
+        "name": "Superficie del césped"
+      },
+      "mowing_efficiency": {
+        "name": "Eficiencia de corte"
+      },
+      "rtk_map": {
+        "name": "Mapa RTK"
+      },
+      "rtk_trail_points": {
+        "name": "Puntos de trayectoria RTK"
+      },
+      "rtk_address": {
+        "name": "Dirección RTK"
+      },
+      "rain_delay": {
+        "name": "Retraso por lluvia"
+      },
+      "rain_remaining": {
+        "name": "Retraso por lluvia restante"
+      },
+      "battery_voltage": {
+        "name": "Voltaje de la batería"
+      },
+      "battery_temperature": {
+        "name": "Temperatura de la batería"
+      },
+      "battery_cycles_total": {
+        "name": "Ciclos de batería (total)"
+      },
+      "battery_cycles_since_reset": {
+        "name": "Ciclos de batería desde el reinicio"
+      },
+      "battery_cycles_reset_at": {
+        "name": "Último reinicio de ciclos de batería"
+      },
+      "blade_runtime_total": {
+        "name": "Tiempo de funcionamiento de cuchillas (total)"
+      },
+      "blade_runtime_current": {
+        "name": "Tiempo de funcionamiento de cuchillas (actual)"
+      },
+      "blade_runtime_reset_at": {
+        "name": "Último reinicio del tiempo de cuchillas"
+      },
+      "mower_runtime_total": {
+        "name": "Tiempo total de funcionamiento"
+      },
+      "mower_home_time_total": {
+        "name": "Tiempo total en la base"
+      },
+      "mower_charging_time_total": {
+        "name": "Tiempo total de carga"
+      },
+      "mower_error_time_total": {
+        "name": "Tiempo total en error"
+      },
+      "maintenance_status": {
+        "name": "Estado de mantenimiento",
+        "state": {
+          "ok": "OK",
+          "blade_service_due": "Revisión de cuchillas pendiente",
+          "battery_service_due": "Revisión de batería pendiente"
+        }
+      },
+      "pitch": {
+        "name": "Cabeceo"
+      },
+      "roll": {
+        "name": "Alabeo"
+      },
+      "yaw": {
+        "name": "Guiñada"
+      },
+      "last_update": {
+        "name": "Última actualización"
+      },
+      "last_update_age": {
+        "name": "Antigüedad de la última actualización"
+      }
+    },
+    "binary_sensor": {
+      "online": {
+        "name": "En línea"
+      },
+      "iot_registered": {
+        "name": "IoT registrado"
+      },
+      "mqtt_registered": {
+        "name": "MQTT registrado"
+      },
+      "locked": {
+        "name": "Bloqueado"
+      },
+      "rain_triggered": {
+        "name": "Lluvia detectada"
+      },
+      "robot_lifted": {
+        "name": "Robot levantado"
+      },
+      "off_limits_enabled": {
+        "name": "Zonas prohibidas activadas"
+      },
+      "acs_enabled": {
+        "name": "ACS activado"
+      },
+      "party_mode_enabled": {
+        "name": "Modo fiesta activado"
+      },
+      "pause_mode_enabled": {
+        "name": "Modo pausa activado"
+      },
+      "smart_edge_cut": {
+        "name": "Corte de bordes inteligente"
+      },
+      "save_hedgehogs": {
+        "name": "Modo erizos"
+      }
+    },
+    "switch": {
+      "firmware_auto_upgrade": {
+        "name": "Actualización automática de firmware"
+      },
+      "lock": {
+        "name": "Bloqueo"
+      },
+      "native_schedule": {
+        "name": "Programación nativa"
+      },
+      "smart_edge_cut": {
+        "name": "Corte de bordes inteligente"
+      },
+      "save_hedgehogs": {
+        "name": "Modo erizos"
+      },
+      "one_time_mowing_edge_cut": {
+        "name": "Corte de bordes"
+      }
+    },
+    "button": {
+      "refresh": {
+        "name": "Actualizar"
+      },
+      "reset_blade_counter": {
+        "name": "Reiniciar tiempo de cuchillas"
+      },
+      "reset_battery_cycle_counter": {
+        "name": "Reiniciar ciclos de batería"
+      },
+      "start_edge_cut": {
+        "name": "Iniciar corte de bordes"
+      },
+      "start_one_time_mowing": {
+        "name": "Iniciar corte puntual"
+      }
+    },
+    "number": {
+      "rain_delay_minutes": {
+        "name": "Retraso por lluvia"
+      },
+      "time_extension": {
+        "name": "Prolongación de tiempo"
+      },
+      "lawn_area": {
+        "name": "Superficie del césped"
+      },
+      "lawn_perimeter": {
+        "name": "Perímetro del césped"
+      },
+      "one_time_mowing_runtime": {
+        "name": "Duración del corte puntual"
+      }
+    },
+    "select": {
+      "one_time_mowing_zones": {
+        "name": "Zona de corte"
+      }
+    },
+    "update": {
+      "firmware": {
+        "name": "Firmware"
+      }
+    },
+    "camera": {
+      "rtk_map_camera": {
+        "name": "Mapa RTK"
+      }
+    },
+    "calendar": {
+      "schedule": {
+        "name": "Programación de corte"
+      }
+    },
+    "device_tracker": {
+      "rtk_position": {
+        "name": "Posición RTK"
+      }
+    }
+  }
+}
