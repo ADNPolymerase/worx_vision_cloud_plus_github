@@ -34,7 +34,7 @@ If this integration helps you, you can support Smart Service:
 - Switches for Smart edge cutting, Save the hedgehogs and schedule edge procedure.
 - Next mowing time sensor, daily and remaining progress, today and total mowed area, lawn area and mowing efficiency sensors when available from the API.
 - Separate smart mowing automation blueprint repository.
-- Polish, English, French and German translations, including localized entity states, schedule and calendar.
+- Translations: Polish, English, French, German, Dutch, Spanish, Italian, Swedish, Norwegian and Danish, including localized entity states, schedule and calendar.
 - Optional raw payload entities for debugging, disabled by default.
 
 ## Installation With HACS
