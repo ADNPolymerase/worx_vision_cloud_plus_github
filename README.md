@@ -10,9 +10,9 @@
 [![HA Version](https://img.shields.io/badge/Home%20Assistant-2024.1%2B-blue.svg)](https://www.home-assistant.io/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/ADNPolymerase/worx_vision_cloud_plus_github/blob/main/LICENSE)
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-support-yellow.svg?logo=buy-me-a-coffee)](https://buymeacoffee.com/adnpolymerase)
-[![My other projects](https://img.shields.io/badge/My%20other%20projects-adnpolymerase.github.io-8a2be2.svg)](https://adnpolymerase.github.io/HA/)
 
 <a href="https://buymeacoffee.com/adnpolymerase" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-orange.png" alt="Buy Me A Coffee" height="60"></a>
+<a href="https://adnpolymerase.github.io/HA/" target="_blank"><img src="https://raw.githubusercontent.com/ADNPolymerase/HA/main/assets/site-button.svg" alt="Link to my github.io for my other projects" height="60"></a>
 
 > Enhanced fork of [SmartServicePL/worx_vision_cloud_plus_github](https://github.com/SmartServicePL/worx_vision_cloud_plus_github). The original maintainer has been unresponsive for a while, so this fork keeps receiving fixes and new features in the meantime.
 
