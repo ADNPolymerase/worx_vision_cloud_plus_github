@@ -4,6 +4,8 @@
 
 # Worx Vision Cloud PLUS
 
+[![My other projects](https://img.shields.io/badge/My%20other%20projects-adnpolymerase.github.io-8a2be2.svg)](https://adnpolymerase.github.io/HA/)
+
 Custom Home Assistant integration for Worx Landroid Vision / Vision Cloud / RTK mowers.
 
 This integration is built on top of the community `pyworxcloud` library and adds a cleaner Home Assistant entity layer for Vision mowers: mower controls, useful sensors, diagnostics, schedule calendar, RTK map rendering and live-ish robot position tracking.
