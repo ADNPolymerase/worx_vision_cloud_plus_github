@@ -14,19 +14,25 @@
 
 <a href="https://buymeacoffee.com/adnpolymerase" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-orange.png" alt="Buy Me A Coffee" height="60"></a>
 
-> Enhanced fork of [SmartServicePL/worx_vision_cloud_plus_github](https://github.com/SmartServicePL/worx_vision_cloud_plus_github) — the original maintainer has been unresponsive for a while, so this fork keeps receiving fixes and new features in the meantime.
+> Enhanced fork of [SmartServicePL/worx_vision_cloud_plus_github](https://github.com/SmartServicePL/worx_vision_cloud_plus_github). The original maintainer has been unresponsive for a while, so this fork keeps receiving fixes and new features in the meantime.
 
 Custom Home Assistant integration for Worx Landroid Vision / Vision Cloud / RTK mowers.
 
 This integration is built on top of the community `pyworxcloud` library and adds a cleaner Home Assistant entity layer for Vision mowers: mower controls, useful sensors, diagnostics, schedule calendar, RTK map rendering and live-ish robot position tracking.
 
-Integration prepared by **Smart Service**.
+Integration originally prepared by Smart Service.
 
-## Support
+## What's new in this fork
 
-If this integration helps you, you can support Smart Service:
-
-[Donate via Revolut](https://revolut.me/smartserwis)
+- Estimated area mowed today sensor, computed locally to work around REST API staleness
+- Estimated daily mowing progress sensor
+- Periodic device refresh for up to date stats
+- Next schedule now uses pyworxcloud's own computed value
+- Schedule day names and calendar events localized to the UI language
+- Last update sensor throttled to once per 24h instead of on every push
+- Primary mower entity follows the Home Assistant naming convention (no redundant name), improving compatibility with third-party cards such as landroid-card
+- Non-deprecated device_tracker imports
+- 8 additional languages: French, German, Dutch, Spanish, Italian, Swedish, Norwegian and Danish, on top of the original English and Polish
 
 ## Features
 
@@ -45,7 +51,6 @@ If this integration helps you, you can support Smart Service:
 - Optional RTK address sensor using OpenStreetMap Nominatim reverse geocoding, disabled by default.
 - Switches for Smart edge cutting, Save the hedgehogs and schedule edge procedure.
 - Next mowing time sensor, daily and remaining progress, today and total mowed area, lawn area and mowing efficiency sensors when available from the API.
-- Separate smart mowing automation blueprint repository.
 - Translations: Polish, English, French, German, Dutch, Spanish, Italian, Swedish, Norwegian and Danish, including localized entity states, schedule and calendar.
 - Optional raw payload entities for debugging, disabled by default.
 
@@ -54,7 +59,7 @@ If this integration helps you, you can support Smart Service:
 1. Open HACS.
 2. Add this repository as a custom repository.
 3. Select category `Integration`.
-4. Install **Worx Vision Cloud PLUS**.
+4. Install Worx Vision Cloud PLUS.
 5. Restart Home Assistant.
 6. Go to `Settings > Devices & services > Add integration`.
 7. Search for `Worx Vision Cloud PLUS`.
@@ -104,14 +109,6 @@ The exact entity list depends on what your mower reports. Typical entities inclu
 
 See [docs/entities.md](docs/entities.md) for a more detailed list.
 
-## Automations
-
-Home Assistant blueprints and automations are maintained in a separate repository:
-
-[SmartServicePL/worx_vision_cloud_plus_automation](https://github.com/SmartServicePL/worx_vision_cloud_plus_automation)
-
-The smart mowing schedule blueprint lives there, together with its setup guide and the **My Home Assistant** import button.
-
 ## RTK Map
 
 For compatible Vision Cloud / RTK mowers the integration tries to read the private Worx map endpoint and renders a Home Assistant camera entity as SVG.
@@ -140,7 +137,7 @@ Before opening an issue, remove private data from logs and screenshots. See [SEC
 
 ## Mowed area
 
-The mower reports its mowing figures as **covered area** (the surface the blades pass over), not unique lawn area. Because a robot mows with overlapping passes, the **Today mowed area** and **Total area mowed** sensors can legitimately exceed your lawn size, and **Daily progress** reaches 100% once the covered area matches the lawn size. **Today mowed area** is derived from a local-midnight baseline and is rebuilt after a restart or a counter reset.
+The mower reports its mowing figures as covered area (the surface the blades pass over), not unique lawn area. Because a robot mows with overlapping passes, the Today mowed area and Total area mowed sensors can legitimately exceed your lawn size, and Daily progress reaches 100% once the covered area matches the lawn size. Today mowed area is derived from a local-midnight baseline and is rebuilt after a restart or a counter reset.
 
 ## Entity naming
 
@@ -153,4 +150,4 @@ The Worx / Positec cloud API is not officially public. Some endpoints used here 
 ## Credits
 
 - Uses [`pyworxcloud`](https://github.com/MTrab/pyworxcloud).
-- Integration prepared by **Smart Service**.
+- Integration originally prepared by Smart Service.
