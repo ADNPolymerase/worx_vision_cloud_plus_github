@@ -138,9 +138,6 @@
       "rtk_address": {
         "name": "RTK-adress"
       },
-      "rain_delay": {
-        "name": "Regnfördröjning"
-      },
       "rain_remaining": {
         "name": "Återstående regnfördröjning"
       },

@@ -749,18 +749,6 @@ STANDARD_SENSORS: tuple[WorxSensorDescription, ...] = (
         attrs_fn=_rtk_trail_attributes,
     ),
     WorxSensorDescription(
-        key="rain_delay",
-        translation_key="rain_delay",
-        native_unit_of_measurement=UnitOfTime.MINUTES,
-        device_class=SensorDeviceClass.DURATION,
-        state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda d: _rain(d, "delay"),
-        attrs_fn=lambda d: {
-            "triggered": _rain(d, "triggered"),
-            "remaining": _rain(d, "remaining"),
-        },
-    ),
-    WorxSensorDescription(
         key="rain_remaining",
         translation_key="rain_remaining",
         native_unit_of_measurement=UnitOfTime.MINUTES,

@@ -881,9 +881,13 @@ class WorxVisionCoordinator(DataUpdateCoordinator[dict[str, DeviceHandler]]):
         if product_item is not None:
             setattr(device, "_worx_vision_product_item", product_item)
             _LOGGER.debug(
-                "Enriched device %s: area_mowed=%s",
+                "Enriched device %s: area_mowed=%s home_time=%s charging_time=%s work_time=%s error_time=%s",
                 serial_number,
                 product_item.get("area_mowed"),
+                product_item.get("mower_home_time"),
+                product_item.get("mower_charging_time"),
+                product_item.get("mower_work_time"),
+                product_item.get("mower_error_time"),
             )
         else:
             _LOGGER.debug(
