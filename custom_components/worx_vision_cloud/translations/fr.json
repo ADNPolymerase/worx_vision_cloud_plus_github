@@ -251,6 +251,12 @@
       },
       "one_time_mowing_edge_cut": {
         "name": "Coupe de bordure"
+      },
+      "off_limits": {
+        "name": "Zones interdites"
+      },
+      "acs": {
+        "name": "ACS"
       }
     },
     "button": {
@@ -285,6 +291,12 @@
       },
       "one_time_mowing_runtime": {
         "name": "Durée de la tonte unique"
+      },
+      "cutting_height": {
+        "name": "Hauteur de coupe"
+      },
+      "torque": {
+        "name": "Couple moteur"
       }
     },
     "select": {

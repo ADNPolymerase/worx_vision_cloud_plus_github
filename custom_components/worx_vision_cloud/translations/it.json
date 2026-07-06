@@ -251,6 +251,12 @@
       },
       "one_time_mowing_edge_cut": {
         "name": "Taglio bordi"
+      },
+      "off_limits": {
+        "name": "Zone vietate"
+      },
+      "acs": {
+        "name": "ACS"
       }
     },
     "button": {
@@ -285,6 +291,12 @@
       },
       "one_time_mowing_runtime": {
         "name": "Durata taglio singolo"
+      },
+      "cutting_height": {
+        "name": "Altezza di taglio"
+      },
+      "torque": {
+        "name": "Coppia motore"
       }
     },
     "select": {

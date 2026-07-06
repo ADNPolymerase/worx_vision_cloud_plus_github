@@ -251,6 +251,12 @@
       },
       "one_time_mowing_edge_cut": {
         "name": "Randmaaien"
+      },
+      "off_limits": {
+        "name": "Verboden zones"
+      },
+      "acs": {
+        "name": "ACS"
       }
     },
     "button": {
@@ -285,6 +291,12 @@
       },
       "one_time_mowing_runtime": {
         "name": "Duur eenmalig maaien"
+      },
+      "cutting_height": {
+        "name": "Maaihoogte"
+      },
+      "torque": {
+        "name": "Koppel"
       }
     },
     "select": {

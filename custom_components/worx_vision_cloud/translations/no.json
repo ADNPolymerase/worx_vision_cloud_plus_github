@@ -251,6 +251,12 @@
       },
       "one_time_mowing_edge_cut": {
         "name": "Kantklipping"
+      },
+      "off_limits": {
+        "name": "Forbudte soner"
+      },
+      "acs": {
+        "name": "ACS"
       }
     },
     "button": {
@@ -285,6 +291,12 @@
       },
       "one_time_mowing_runtime": {
         "name": "Varighet for engangsklipping"
+      },
+      "cutting_height": {
+        "name": "Klippehøyde"
+      },
+      "torque": {
+        "name": "Dreiemoment"
       }
     },
     "select": {

@@ -17,7 +17,12 @@ from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from pyworxcloud import DeviceHandler, LandroidEvent, WorxCloud
-from pyworxcloud.exceptions import NoPartymodeError
+from pyworxcloud.exceptions import (
+    NoACSModuleError,
+    NoCuttingHeightError,
+    NoOfflimitsError,
+    NoPartymodeError,
+)
 from pyworxcloud.utils.requests import AGET, HEADERS
 
 from .const import DOMAIN
@@ -456,6 +461,68 @@ class WorxVisionCoordinator(DataUpdateCoordinator[dict[str, DeviceHandler]]):
                 "This mower does not support party mode"
             ) from err
 
+        await self.async_request_device_update(serial_number)
+
+    async def async_set_off_limits(self, serial_number: str, enabled: bool) -> None:
+        """Turn the off-limits module on or off."""
+        set_offlimits = getattr(self.cloud, "set_offlimits", None)
+        if set_offlimits is None:
+            raise HomeAssistantError(
+                "The installed pyworxcloud version does not support off limits"
+            )
+
+        try:
+            await set_offlimits(serial_number, enabled)
+        except NoOfflimitsError as err:
+            raise HomeAssistantError(
+                "This mower does not support off limits"
+            ) from err
+
+        await self.async_request_device_update(serial_number)
+
+    async def async_set_cutting_height(self, serial_number: str, height_mm: int) -> None:
+        """Set the cutting height in millimeters."""
+        set_cutting_height = getattr(self.cloud, "set_cutting_height", None)
+        if set_cutting_height is None:
+            raise HomeAssistantError(
+                "The installed pyworxcloud version does not support cutting height"
+            )
+
+        try:
+            await set_cutting_height(serial_number, int(height_mm))
+        except NoCuttingHeightError as err:
+            raise HomeAssistantError(
+                "This mower does not support cutting height"
+            ) from err
+
+        await self.async_request_device_update(serial_number)
+
+    async def async_set_acs(self, serial_number: str, enabled: bool) -> None:
+        """Turn the ACS (Automatic Cutting System) module on or off."""
+        set_acs = getattr(self.cloud, "set_acs", None)
+        if set_acs is None:
+            raise HomeAssistantError(
+                "The installed pyworxcloud version does not support ACS"
+            )
+
+        try:
+            await set_acs(serial_number, enabled)
+        except NoACSModuleError as err:
+            raise HomeAssistantError(
+                "This mower does not have an ACS module installed"
+            ) from err
+
+        await self.async_request_device_update(serial_number)
+
+    async def async_set_torque(self, serial_number: str, torque: int) -> None:
+        """Set wheel torque percentage."""
+        set_torque = getattr(self.cloud, "set_torque", None)
+        if set_torque is None:
+            raise HomeAssistantError(
+                "The installed pyworxcloud version does not support torque updates"
+            )
+
+        await set_torque(serial_number, int(torque))
         await self.async_request_device_update(serial_number)
 
     async def async_toggle_schedule(self, serial_number: str, enabled: bool) -> None:

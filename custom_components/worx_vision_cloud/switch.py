@@ -10,6 +10,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from pyworxcloud import DeviceCapability
 
 from .const import DOMAIN
 from .entity import WorxVisionEntity
@@ -246,6 +247,12 @@ def _save_hedgehogs_attributes(device) -> dict[str, Any]:
     }
 
 
+def _has_capability(device, capability: DeviceCapability) -> bool:
+    """Return true when pyworxcloud detects the capability on the live device."""
+    capabilities = getattr(device, "capabilities", None)
+    return bool(capabilities is not None and capabilities.check(capability))
+
+
 def _party_mode_enabled(device) -> bool | None:
     """Return whether party mode is currently active."""
     return getattr(device, "partymode_enabled", None)
@@ -253,6 +260,28 @@ def _party_mode_enabled(device) -> bool | None:
 
 async def _set_party_mode(coordinator, serial_number: str, enabled: bool) -> None:
     await coordinator.async_set_party_mode(serial_number, enabled)
+
+
+def _off_limits_enabled(device) -> bool | None:
+    """Return whether the off-limits module is currently active."""
+    if not _has_capability(device, DeviceCapability.OFF_LIMITS):
+        return None
+    return getattr(device, "offlimit", None)
+
+
+async def _set_off_limits(coordinator, serial_number: str, enabled: bool) -> None:
+    await coordinator.async_set_off_limits(serial_number, enabled)
+
+
+def _acs_enabled(device) -> bool | None:
+    """Return whether the ACS module is currently active."""
+    if not _has_capability(device, DeviceCapability.ACS):
+        return None
+    return getattr(device, "acs_enabled", None)
+
+
+async def _set_acs(coordinator, serial_number: str, enabled: bool) -> None:
+    await coordinator.async_set_acs(serial_number, enabled)
 
 
 async def _set_smart_edge_cut(coordinator, serial_number: str, enabled: bool) -> None:
@@ -343,6 +372,22 @@ SWITCHES: tuple[WorxSwitchDescription, ...] = (
         value_fn=_save_hedgehogs_enabled,
         turn_fn=_set_save_hedgehogs,
         attrs_fn=_save_hedgehogs_attributes,
+    ),
+    WorxSwitchDescription(
+        key="off_limits",
+        translation_key="off_limits",
+        icon="mdi:map-marker-off",
+        entity_category=EntityCategory.CONFIG,
+        value_fn=_off_limits_enabled,
+        turn_fn=_set_off_limits,
+    ),
+    WorxSwitchDescription(
+        key="acs",
+        translation_key="acs",
+        icon="mdi:shield-check",
+        entity_category=EntityCategory.CONFIG,
+        value_fn=_acs_enabled,
+        turn_fn=_set_acs,
     ),
 )
 

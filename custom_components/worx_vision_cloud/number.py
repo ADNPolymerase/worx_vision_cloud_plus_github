@@ -14,6 +14,7 @@ from homeassistant.const import PERCENTAGE, UnitOfArea, UnitOfLength, UnitOfTime
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from pyworxcloud import DeviceCapability
 
 from .const import DOMAIN
 from .entity import WorxVisionEntity
@@ -107,6 +108,38 @@ def _is_online(device) -> bool:
 def _has_time_extension(device) -> bool:
     """Return true when schedule time extension is visible."""
     return _is_online(device) and _schedule_value(device, "time_extension") is not None
+
+
+def _has_device_capability(device, capability: DeviceCapability) -> bool:
+    """Return true when pyworxcloud detects the capability on the live device."""
+    capabilities = getattr(device, "capabilities", None)
+    return bool(capabilities is not None and capabilities.check(capability))
+
+
+def _module_config(device, module: str) -> dict[str, Any]:
+    value = getattr(device, "module_config", None) or {}
+    module_value = get_dict_value(value, module, {})
+    return module_value if isinstance(module_value, dict) else {}
+
+
+def _cutting_height(device) -> float | None:
+    if not _has_device_capability(device, DeviceCapability.CUTTING_HEIGHT):
+        return None
+    return _as_float(_module_config(device, "EA").get("h"))
+
+
+def _torque(device) -> float | None:
+    if not _has_device_capability(device, DeviceCapability.TORQUE):
+        return None
+    return _as_float(getattr(device, "torque", None))
+
+
+async def _set_cutting_height(coordinator, serial_number: str, value: float) -> None:
+    await coordinator.async_set_cutting_height(serial_number, round(value))
+
+
+async def _set_torque(coordinator, serial_number: str, value: float) -> None:
+    await coordinator.async_set_torque(serial_number, round(value))
 
 
 async def _set_rain_delay(coordinator, serial_number: str, value: float) -> None:
@@ -203,6 +236,36 @@ NUMBERS: tuple[WorxNumberDescription, ...] = (
             "product_item_value": _product_item(d, "lawn_perimeter"),
             "map_zone_value": get_dict_value(_first_map_zone(d), "perimeter"),
         },
+    ),
+    WorxNumberDescription(
+        key="cutting_height",
+        translation_key="cutting_height",
+        icon="mdi:grass",
+        entity_category=EntityCategory.CONFIG,
+        native_min_value=20,
+        native_max_value=60,
+        native_step=5,
+        native_unit_of_measurement=UnitOfLength.MILLIMETERS,
+        mode=NumberMode.BOX,
+        value_fn=_cutting_height,
+        set_fn=_set_cutting_height,
+        available_fn=_is_online,
+        attrs_fn=lambda d: {"api_method": "pyworxcloud.set_cutting_height"},
+    ),
+    WorxNumberDescription(
+        key="torque",
+        translation_key="torque",
+        icon="mdi:engine",
+        entity_category=EntityCategory.CONFIG,
+        native_min_value=-50,
+        native_max_value=50,
+        native_step=1,
+        native_unit_of_measurement=PERCENTAGE,
+        mode=NumberMode.BOX,
+        value_fn=_torque,
+        set_fn=_set_torque,
+        available_fn=_is_online,
+        attrs_fn=lambda d: {"api_method": "pyworxcloud.set_torque"},
     ),
 )
 

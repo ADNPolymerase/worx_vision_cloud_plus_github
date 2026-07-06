@@ -251,6 +251,12 @@
       },
       "one_time_mowing_edge_cut": {
         "name": "Kantklipning"
+      },
+      "off_limits": {
+        "name": "Forbudte zoner"
+      },
+      "acs": {
+        "name": "ACS"
       }
     },
     "button": {
@@ -285,6 +291,12 @@
       },
       "one_time_mowing_runtime": {
         "name": "Varighed af engangsslåning"
+      },
+      "cutting_height": {
+        "name": "Klippehøjde"
+      },
+      "torque": {
+        "name": "Drejemoment"
       }
     },
     "select": {
