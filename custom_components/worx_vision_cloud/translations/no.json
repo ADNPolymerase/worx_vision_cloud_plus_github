@@ -258,6 +258,9 @@
       "save_hedgehogs": {
         "name": "Redd pinnsvinene"
       },
+      "party_mode": {
+        "name": "Festmodus"
+      },
       "one_time_mowing_edge_cut": {
         "name": "Kantklipping"
       }

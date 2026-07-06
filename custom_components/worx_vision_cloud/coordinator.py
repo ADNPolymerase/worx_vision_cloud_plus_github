@@ -17,6 +17,7 @@ from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from pyworxcloud import DeviceHandler, LandroidEvent, WorxCloud
+from pyworxcloud.exceptions import NoPartymodeError
 from pyworxcloud.utils.requests import AGET, HEADERS
 
 from .const import DOMAIN
@@ -438,6 +439,23 @@ class WorxVisionCoordinator(DataUpdateCoordinator[dict[str, DeviceHandler]]):
 
         await set_lock(serial_number, state=enabled)
         self._update_cached_product_item(serial_number, locked=enabled)
+        await self.async_request_device_update(serial_number)
+
+    async def async_set_party_mode(self, serial_number: str, enabled: bool) -> None:
+        """Turn party mode on or off."""
+        set_party_mode = getattr(self.cloud, "set_party_mode", None)
+        if set_party_mode is None:
+            raise HomeAssistantError(
+                "The installed pyworxcloud version does not support party mode"
+            )
+
+        try:
+            await set_party_mode(serial_number, enabled)
+        except NoPartymodeError as err:
+            raise HomeAssistantError(
+                "This mower does not support party mode"
+            ) from err
+
         await self.async_request_device_update(serial_number)
 
     async def async_toggle_schedule(self, serial_number: str, enabled: bool) -> None:

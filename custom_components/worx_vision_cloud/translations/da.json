@@ -258,6 +258,9 @@
       "save_hedgehogs": {
         "name": "Red pindsvinene"
       },
+      "party_mode": {
+        "name": "Festtilstand"
+      },
       "one_time_mowing_edge_cut": {
         "name": "Kantklipning"
       }

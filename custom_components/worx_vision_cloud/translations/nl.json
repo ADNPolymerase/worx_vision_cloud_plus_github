@@ -258,6 +258,9 @@
       "save_hedgehogs": {
         "name": "Egels redden"
       },
+      "party_mode": {
+        "name": "Feestmodus"
+      },
       "one_time_mowing_edge_cut": {
         "name": "Randmaaien"
       }

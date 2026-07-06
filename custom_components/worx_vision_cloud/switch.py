@@ -246,6 +246,15 @@ def _save_hedgehogs_attributes(device) -> dict[str, Any]:
     }
 
 
+def _party_mode_enabled(device) -> bool | None:
+    """Return whether party mode is currently active."""
+    return getattr(device, "partymode_enabled", None)
+
+
+async def _set_party_mode(coordinator, serial_number: str, enabled: bool) -> None:
+    await coordinator.async_set_party_mode(serial_number, enabled)
+
+
 async def _set_smart_edge_cut(coordinator, serial_number: str, enabled: bool) -> None:
     await coordinator.async_set_cut_over_border(serial_number, enabled)
 
@@ -317,6 +326,14 @@ SWITCHES: tuple[WorxSwitchDescription, ...] = (
         value_fn=_smart_edge_cut_enabled,
         turn_fn=_set_smart_edge_cut,
         attrs_fn=_smart_edge_cut_attributes,
+    ),
+    WorxSwitchDescription(
+        key="party_mode",
+        translation_key="party_mode",
+        icon="mdi:party-popper",
+        entity_category=EntityCategory.CONFIG,
+        value_fn=_party_mode_enabled,
+        turn_fn=_set_party_mode,
     ),
     WorxSwitchDescription(
         key="save_hedgehogs",

@@ -258,6 +258,9 @@
       "save_hedgehogs": {
         "name": "Salva i ricci"
       },
+      "party_mode": {
+        "name": "Modalità festa"
+      },
       "one_time_mowing_edge_cut": {
         "name": "Taglio bordi"
       }

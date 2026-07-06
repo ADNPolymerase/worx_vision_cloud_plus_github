@@ -258,6 +258,9 @@
       "save_hedgehogs": {
         "name": "Rädda igelkottarna"
       },
+      "party_mode": {
+        "name": "Festläge"
+      },
       "one_time_mowing_edge_cut": {
         "name": "Kantklippning"
       }

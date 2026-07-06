@@ -258,6 +258,9 @@
       "save_hedgehogs": {
         "name": "Save the hedgehogs"
       },
+      "party_mode": {
+        "name": "Party mode"
+      },
       "one_time_mowing_edge_cut": {
         "name": "One-time mowing edge cut"
       }

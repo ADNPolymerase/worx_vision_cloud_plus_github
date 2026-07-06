@@ -258,6 +258,9 @@
       "save_hedgehogs": {
         "name": "Sauvons les hérissons"
       },
+      "party_mode": {
+        "name": "Mode festif"
+      },
       "one_time_mowing_edge_cut": {
         "name": "Coupe de bordure"
       }

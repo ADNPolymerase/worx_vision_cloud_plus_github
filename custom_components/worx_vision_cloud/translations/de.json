@@ -258,6 +258,9 @@
       "save_hedgehogs": {
         "name": "Igel retten"
       },
+      "party_mode": {
+        "name": "Partymodus"
+      },
       "one_time_mowing_edge_cut": {
         "name": "Kantenschnitt"
       }

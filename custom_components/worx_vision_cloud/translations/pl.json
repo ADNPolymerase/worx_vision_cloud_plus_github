@@ -258,6 +258,9 @@
       "save_hedgehogs": {
         "name": "Ochrona jeży"
       },
+      "party_mode": {
+        "name": "Tryb imprezowy"
+      },
       "one_time_mowing_edge_cut": {
         "name": "Krawędzie koszenia jednorazowego"
       }
