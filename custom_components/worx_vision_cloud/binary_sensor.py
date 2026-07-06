@@ -75,95 +75,6 @@ def _as_bool(value: Any) -> bool | None:
     return None
 
 
-def _rtk_map_data(device) -> dict[str, Any]:
-    """Return cached RTK map payload from the private API."""
-    value = getattr(device, "_worx_vision_rtk_map", {}) or {}
-    return value if isinstance(value, dict) else {}
-
-
-def _first_map_zone_metadata(device) -> dict[str, Any]:
-    """Return metadata from the first RTK map boundary zone."""
-    layers = get_dict_value(_rtk_map_data(device), "layers", {}) or {}
-    boundaries = get_dict_value(layers, "boundaries", []) or []
-    for boundary in boundaries:
-        zones = get_dict_value(boundary, "zones", []) or []
-        for zone in zones:
-            metadata = get_dict_value(zone, "metadata", {}) or {}
-            if isinstance(metadata, dict):
-                return metadata
-    return {}
-
-
-def _smart_edge_cut_enabled(device) -> bool | None:
-    """Return the Vision map setting that allows cutting over the border."""
-    value = get_dict_value(_first_map_zone_metadata(device), "cut_over_border")
-    return value if isinstance(value, bool) else None
-
-
-def _smart_edge_cut_attributes(device) -> dict[str, Any]:
-    """Return map metadata related to intelligent edge cutting."""
-    metadata = _first_map_zone_metadata(device)
-    product_item = _product_item(device)
-    capabilities = get_dict_value(product_item, "capabilities", []) or []
-    if not isinstance(capabilities, list | tuple):
-        capabilities = []
-
-    return {
-        "api_field": "layers.boundaries[].zones[].metadata.cut_over_border",
-        "capability_border_cut": "border_cut" in capabilities,
-        "capability_pause_over_border": "pause_over_border" in capabilities,
-        "cut_type": get_dict_value(metadata, "cut_type"),
-        "cut_direction": get_dict_value(metadata, "cut_direction"),
-        "pattern_width": get_dict_value(metadata, "pattern_width"),
-    }
-
-
-def _auto_schedule_settings(device) -> dict[str, Any]:
-    """Return automatic schedule settings from pyworxcloud or product item data."""
-    schedules = getattr(device, "schedules", {}) or {}
-    auto_schedule = get_dict_value(schedules, "auto_schedule", {}) or {}
-    settings = get_dict_value(auto_schedule, "settings", {}) or {}
-    if isinstance(settings, dict) and settings:
-        return settings
-
-    product_settings = get_dict_value(_product_item(device), "auto_schedule_settings", {})
-    return product_settings if isinstance(product_settings, dict) else {}
-
-
-def _save_hedgehogs_enabled(device) -> bool | None:
-    """Return the app option commonly shown as Save the hedgehogs."""
-    settings = _auto_schedule_settings(device)
-    for key in ("exclude_nights", "save_hedgehogs", "hedgehog_mode"):
-        value = get_dict_value(settings, key)
-        if isinstance(value, bool):
-            return value
-
-    exclusion_scheduler = get_dict_value(settings, "exclusion_scheduler", {}) or {}
-    if isinstance(exclusion_scheduler, dict):
-        value = get_dict_value(exclusion_scheduler, "exclude_nights")
-        if isinstance(value, bool):
-            return value
-    return None
-
-
-def _save_hedgehogs_attributes(device) -> dict[str, Any]:
-    """Return auto-schedule details related to Save the hedgehogs."""
-    settings = _auto_schedule_settings(device)
-    schedules = getattr(device, "schedules", {}) or {}
-    auto_schedule = get_dict_value(schedules, "auto_schedule", {}) or {}
-    product_item = _product_item(device)
-
-    return {
-        "api_field": "auto_schedule.settings.exclude_nights",
-        "auto_schedule_enabled": get_dict_value(auto_schedule, "enabled")
-        if isinstance(auto_schedule, dict)
-        else get_dict_value(product_item, "auto_schedule"),
-        "auto_schedule": get_dict_value(product_item, "auto_schedule"),
-        "exclude_nights": get_dict_value(settings, "exclude_nights"),
-        "exclusion_scheduler": get_dict_value(settings, "exclusion_scheduler"),
-    }
-
-
 def _normalized_text(value: Any) -> str:
     """Return normalized API text for robust comparisons."""
     return str(value or "").strip().lower().replace("_", " ").replace("-", " ")
@@ -224,13 +135,6 @@ BINARY_SENSORS: tuple[WorxBinarySensorDescription, ...] = (
         },
     ),
     WorxBinarySensorDescription(
-        key="locked",
-        translation_key="locked",
-        device_class=BinarySensorDeviceClass.LOCK,
-        entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda d: getattr(d, "locked", None),
-    ),
-    WorxBinarySensorDescription(
         key="rain_triggered",
         translation_key="rain_triggered",
         device_class=BinarySensorDeviceClass.MOISTURE,
@@ -244,32 +148,10 @@ BINARY_SENSORS: tuple[WorxBinarySensorDescription, ...] = (
         attrs_fn=_robot_lifted_attributes,
     ),
     WorxBinarySensorDescription(
-        key="party_mode_enabled",
-        translation_key="party_mode_enabled",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda d: getattr(d, "partymode_enabled", None),
-    ),
-    WorxBinarySensorDescription(
         key="pause_mode_enabled",
         translation_key="pause_mode_enabled",
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda d: getattr(d, "pause_mode_enabled", None),
-    ),
-    WorxBinarySensorDescription(
-        key="smart_edge_cut",
-        translation_key="smart_edge_cut",
-        icon="mdi:vector-polyline",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=_smart_edge_cut_enabled,
-        attrs_fn=_smart_edge_cut_attributes,
-    ),
-    WorxBinarySensorDescription(
-        key="save_hedgehogs",
-        translation_key="save_hedgehogs",
-        icon="mdi:weather-night",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=_save_hedgehogs_enabled,
-        attrs_fn=_save_hedgehogs_attributes,
     ),
 )
 

@@ -214,9 +214,6 @@
       "mqtt_registered": {
         "name": "MQTT geregistreerd"
       },
-      "locked": {
-        "name": "Vergrendeld"
-      },
       "rain_triggered": {
         "name": "Regen gedetecteerd"
       },
@@ -229,17 +226,8 @@
       "acs_enabled": {
         "name": "ACS ingeschakeld"
       },
-      "party_mode_enabled": {
-        "name": "Feestmodus ingeschakeld"
-      },
       "pause_mode_enabled": {
         "name": "Pauzemodus ingeschakeld"
-      },
-      "smart_edge_cut": {
-        "name": "Slim randmaaien"
-      },
-      "save_hedgehogs": {
-        "name": "Egels redden"
       }
     },
     "switch": {

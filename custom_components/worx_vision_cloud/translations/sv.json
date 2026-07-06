@@ -214,9 +214,6 @@
       "mqtt_registered": {
         "name": "MQTT registrerad"
       },
-      "locked": {
-        "name": "Låst"
-      },
       "rain_triggered": {
         "name": "Regn upptäckt"
       },
@@ -229,17 +226,8 @@
       "acs_enabled": {
         "name": "ACS aktiverat"
       },
-      "party_mode_enabled": {
-        "name": "Festläge aktiverat"
-      },
       "pause_mode_enabled": {
         "name": "Pausläge aktiverat"
-      },
-      "smart_edge_cut": {
-        "name": "Smart kantklippning"
-      },
-      "save_hedgehogs": {
-        "name": "Rädda igelkottarna"
       }
     },
     "switch": {

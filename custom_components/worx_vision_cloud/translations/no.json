@@ -214,9 +214,6 @@
       "mqtt_registered": {
         "name": "MQTT registrert"
       },
-      "locked": {
-        "name": "Låst"
-      },
       "rain_triggered": {
         "name": "Regn oppdaget"
       },
@@ -229,17 +226,8 @@
       "acs_enabled": {
         "name": "ACS aktivert"
       },
-      "party_mode_enabled": {
-        "name": "Festmodus aktivert"
-      },
       "pause_mode_enabled": {
         "name": "Pausemodus aktivert"
-      },
-      "smart_edge_cut": {
-        "name": "Smart kantklipping"
-      },
-      "save_hedgehogs": {
-        "name": "Redd pinnsvinene"
       }
     },
     "switch": {

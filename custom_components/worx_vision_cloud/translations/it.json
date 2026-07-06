@@ -214,9 +214,6 @@
       "mqtt_registered": {
         "name": "MQTT registrato"
       },
-      "locked": {
-        "name": "Bloccato"
-      },
       "rain_triggered": {
         "name": "Pioggia rilevata"
       },
@@ -229,17 +226,8 @@
       "acs_enabled": {
         "name": "ACS attivo"
       },
-      "party_mode_enabled": {
-        "name": "Modalità festa attiva"
-      },
       "pause_mode_enabled": {
         "name": "Modalità pausa attiva"
-      },
-      "smart_edge_cut": {
-        "name": "Taglio bordi intelligente"
-      },
-      "save_hedgehogs": {
-        "name": "Salva i ricci"
       }
     },
     "switch": {

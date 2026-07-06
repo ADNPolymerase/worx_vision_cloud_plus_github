@@ -214,9 +214,6 @@
       "mqtt_registered": {
         "name": "MQTT registered"
       },
-      "locked": {
-        "name": "Locked"
-      },
       "rain_triggered": {
         "name": "Rain triggered"
       },
@@ -229,17 +226,8 @@
       "acs_enabled": {
         "name": "ACS enabled"
       },
-      "party_mode_enabled": {
-        "name": "Party mode enabled"
-      },
       "pause_mode_enabled": {
         "name": "Pause mode enabled"
-      },
-      "smart_edge_cut": {
-        "name": "Smart edge cutting"
-      },
-      "save_hedgehogs": {
-        "name": "Save the hedgehogs"
       }
     },
     "switch": {
