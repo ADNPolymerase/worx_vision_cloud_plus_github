@@ -41,6 +41,12 @@ def _as_float(value: Any) -> float | None:
         return None
 
 
+def _as_int(value: Any) -> int | None:
+    """Return a whole number from API scalar values, without a decimal part."""
+    value = _as_float(value)
+    return None if value is None else round(value)
+
+
 def _rain(device, key, default=None):
     return get_dict_value(getattr(device, "rainsensor", {}), key, default)
 
@@ -125,13 +131,13 @@ def _module_config(device, module: str) -> dict[str, Any]:
 def _cutting_height(device) -> float | None:
     if not _has_device_capability(device, DeviceCapability.CUTTING_HEIGHT):
         return None
-    return _as_float(_module_config(device, "EA").get("h"))
+    return _as_int(_module_config(device, "EA").get("h"))
 
 
 def _torque(device) -> float | None:
     if not _has_device_capability(device, DeviceCapability.TORQUE):
         return None
-    return _as_float(getattr(device, "torque", None))
+    return _as_int(getattr(device, "torque", None))
 
 
 async def _set_cutting_height(coordinator, serial_number: str, value: float) -> None:
@@ -169,7 +175,7 @@ NUMBERS: tuple[WorxNumberDescription, ...] = (
         native_step=1,
         native_unit_of_measurement=UnitOfTime.MINUTES,
         mode=NumberMode.BOX,
-        value_fn=lambda d: _as_float(_rain(d, "delay")),
+        value_fn=lambda d: _as_int(_rain(d, "delay")),
         set_fn=_set_rain_delay,
         available_fn=lambda d: _is_online(d) and _has_capability(d, "rain_delay"),
         attrs_fn=lambda d: {
@@ -257,6 +263,7 @@ NUMBERS: tuple[WorxNumberDescription, ...] = (
         translation_key="torque",
         icon="mdi:engine",
         entity_category=EntityCategory.CONFIG,
+        entity_registry_enabled_default=False,
         native_min_value=-50,
         native_max_value=50,
         native_step=1,
