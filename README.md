@@ -86,18 +86,6 @@ to your Home Assistant config directory:
 
 Then restart Home Assistant and add the integration from `Settings > Devices & services`.
 
-## Configuration
-
-Use the same e-mail and password as in the Worx Landroid app.
-
-Supported cloud selector values:
-
-- `worx`
-- `kress`
-- `landxcape`
-
-Most users should keep SSL verification enabled.
-
 ## Entities
 
 The exact entity list depends on what your mower reports. Typical entities include:
