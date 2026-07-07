@@ -70,6 +70,8 @@ This integration is built on top of the community `pyworxcloud` library and adds
 6. Go to `Settings > Devices & services > Add integration`.
 7. Search for `Worx Landroid Vision PLUS`.
 
+At setup, sign in with the same e-mail and password as in your mower app and pick your brand cloud: `worx`, `kress` or `landxcape`.
+
 ## Manual Installation
 
 Copy this directory:
