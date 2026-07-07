@@ -2,6 +2,39 @@
 
 ## Unreleased
 
+- Moved the daily area/progress baselines and the local mowing-time counter
+  from per-entity restored state into a coordinator-level tracker persisted in
+  Home Assistant storage (synced back from upstream SmartServicePL 1.2.0):
+  every daily sensor now shares one baseline per mower, survives entity
+  renames, and handles cloud counter resets and multi-day gaps without
+  attributing several days of mowing to today.
+- Added a Mowing time today sensor exposing the locally observed mowing
+  minutes the estimated sensors are computed from.
+- Added a Cloud statistics updated diagnostic timestamp showing when the
+  cumulative Worx REST statistics were last fetched.
+- Mowing efficiency now prefers blade-active time over total mower runtime
+  (which includes driving and idling), improving the estimated daily figures.
+- Next schedule now returns nothing while the native schedule is disabled or
+  party mode is active, ignores stale library values, and looks up to 14 days
+  ahead (synced from upstream 1.2.0).
+- Added Download diagnostics support with automatic redaction of coordinates,
+  addresses and account/device identifiers, for safe GitHub issue reports.
+- Device names no longer repeat the account e-mail, the account e-mail is no
+  longer suggested as a Home Assistant area (existing e-mail areas are
+  detached automatically), and entity IDs that inherited the e-mail prefix
+  are migrated (synced from upstream 1.2.0).
+- Entities removed by the 1.5.0 consolidation are now cleaned from the entity
+  registry automatically instead of lingering as restored orphans.
+- Removed the deprecated device-tracker battery_level property override while
+  keeping the value as a state attribute, preventing a Home Assistant 2027.7
+  break (synced from upstream 1.2.0).
+- Passed the config entry explicitly to the coordinator for Home Assistant
+  2026.8 compatibility (synced from upstream 1.2.0).
+- Added unit tests for the daily statistics tracker and next-schedule
+  calculation, now run by the validation workflow.
+- The release workflow is manual-only so code pushes can never silently
+  re-tag the current stable release.
+
 ## 1.5.0 - 2026-07-06
 
 - Added a party mode switch (previously only a read-only sensor).

@@ -14,7 +14,7 @@
 <a href="https://buymeacoffee.com/adnpolymerase" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-orange.png" alt="Buy Me A Coffee" height="60"></a>
 <a href="https://adnpolymerase.github.io/HA/" target="_blank"><img src="https://raw.githubusercontent.com/ADNPolymerase/HA/main/assets/site-button.svg" alt="Link to my github.io for my other projects" height="60"></a>
 
-> Enhanced fork of [SmartServicePL/worx_vision_cloud_plus_github](https://github.com/SmartServicePL/worx_vision_cloud_plus_github). The original maintainer has been unresponsive for a while, so this fork keeps receiving fixes and new features in the meantime.
+> Enhanced fork of [SmartServicePL/worx_vision_cloud_plus_github](https://github.com/SmartServicePL/worx_vision_cloud_plus_github). Improvements flow in both directions: fixes from this fork have landed upstream and upstream fixes are synced back here, on top of features this fork adds on its own.
 
 Custom Home Assistant integration for Worx Landroid Vision / Vision Cloud / RTK mowers.
 
@@ -37,6 +37,9 @@ Integration originally prepared by Smart Service.
 - ACS, off limits, cutting height and torque controls, gated on pyworxcloud's live per-device capability detection rather than a manual model list, so they only show up when your mower actually reports the matching hardware module
 - Removed duplicate entities that exposed the same value twice as both a switch and a read-only sensor (lock, smart edge cutting, save the hedgehogs, party mode) and a duplicate rain delay sensor next to the existing rain delay number
 - Mower home time and charging time sensors are now disabled by default: for many accounts the Worx API reports them as a permanent 0 (unlike mower work time, which does update), so they're kept as opt-in diagnostics rather than shown by default
+- Daily area/progress and mowing-time tracking persisted in Home Assistant storage at the coordinator level: one shared baseline per mower that survives restarts and entity renames, with proper handling of cloud counter resets, multi-day gaps and mowing across midnight
+- Mowing time today sensor (locally observed, independent of Worx's sporadic work-time statistics) and a Cloud statistics updated diagnostic timestamp
+- Download diagnostics support with automatic redaction of coordinates, addresses and account/device identifiers, so issue reports are safe to attach
 
 ## Features
 
@@ -105,7 +108,7 @@ The exact entity list depends on what your mower reports. Typical entities inclu
 - `calendar` mowing schedule
 - `camera` RTK map
 - `device_tracker` RTK robot position
-- `sensor` battery, status, error, readiness, cloud connection, RSSI, schedule, next schedule, RTK map, RTK trail, daily progress, remaining progress, today and total mowed area, lawn area, runtime, efficiency and maintenance values (home time and charging time are included but disabled by default, see below)
+- `sensor` battery, status, error, readiness, cloud connection, RSSI, schedule, next schedule, RTK map, RTK trail, daily progress, remaining progress, today and total mowed area, estimated daily area and progress, mowing time today, lawn area, runtime, efficiency, cloud statistics freshness and maintenance values (home time and charging time are included but disabled by default, see below)
 - `binary_sensor` online, IoT/MQTT registration, rain, robot lifted and pause mode
 - `switch` firmware auto update, mower lock, native schedule, smart edge cutting, save the hedgehogs, party mode, off limits and ACS (the last two only when your mower reports the matching module)
 - `number` rain delay, schedule time extension, lawn area, lawn perimeter, cutting height and torque (the last two only when your mower reports the matching module; torque is disabled by default)
@@ -141,7 +144,7 @@ Before opening an issue, remove private data from logs and screenshots. See [SEC
 
 ## Mowed area
 
-The mower reports its mowing figures as covered area (the surface the blades pass over), not unique lawn area. Because a robot mows with overlapping passes, the Today mowed area and Total area mowed sensors can legitimately exceed your lawn size, and Daily progress reaches 100% once the covered area matches the lawn size. Today mowed area is derived from a local-midnight baseline and is rebuilt after a restart or a counter reset.
+The mower reports its mowing figures as covered area (the surface the blades pass over), not unique lawn area. Because a robot mows with overlapping passes, the Today mowed area and Total area mowed sensors can legitimately exceed your lawn size, and Daily progress reaches 100% once the covered area matches the lawn size. Today mowed area is derived from a local-midnight baseline kept in Home Assistant storage per mower, so it survives restarts and entity renames; cloud counter resets and multi-day offline gaps are detected instead of being misattributed to today.
 
 ## Entity naming
 

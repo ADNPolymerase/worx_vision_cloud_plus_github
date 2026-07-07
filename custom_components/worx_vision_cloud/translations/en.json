@@ -199,6 +199,12 @@
       },
       "last_update_age": {
         "name": "Last update age"
+      },
+      "cloud_statistics_updated": {
+        "name": "Cloud statistics updated"
+      },
+      "mowing_time_today": {
+        "name": "Mowing time today"
       }
     },
     "binary_sensor": {

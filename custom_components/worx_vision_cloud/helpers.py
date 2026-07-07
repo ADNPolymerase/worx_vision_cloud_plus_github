@@ -10,11 +10,15 @@ from typing import Any
 
 from homeassistant.util import slugify
 
-# Shared with lawn_mower.py and sensor.py so both agree on what "mowing" means
-# (used e.g. to track today's actual mowing time independent of Worx's own,
-# sometimes-stale work-time statistics).
+# Shared with lawn_mower.py, sensor.py and coordinator.py so all agree on what
+# each mower status means (used e.g. to track today's actual mowing time
+# independent of Worx's own, sometimes-stale work-time statistics).
 MOWING_STATUS_IDS = {7, 8, 12, 32, 110, 111}
+RETURNING_STATUS_IDS = {4, 5, 6, 30, 104}
 STARTING_STATUS_IDS = {2, 3, 33, 103}
+PAUSED_STATUS_IDS = {34}
+DOCKED_STATUS_IDS = {1}
+ERROR_STATUS_IDS = {9, 10, 13}
 
 RAW_SOURCE_ATTRS = (
     "raw_dat",
@@ -433,12 +437,22 @@ def next_schedule_start(device: Any, now: datetime) -> datetime | None:
     """Return the next scheduled mowing start at or after ``now``.
 
     Prefers the value already computed by pyworxcloud
-    (``schedules["next_schedule_start"]``) and falls back to deriving it from the
-    weekly slots ourselves. Returns a timezone-aware datetime (matching ``now``'s
-    tzinfo) or None when no schedule is configured.
+    (``schedules["next_schedule_start"]``) when it is still in the future, and
+    falls back to deriving it from the weekly slots ourselves. Returns None
+    when the native schedule is disabled or party mode suspends it. Returns a
+    timezone-aware datetime (matching ``now``'s tzinfo) otherwise.
     """
+    if now.tzinfo is None:
+        raise ValueError("now must be timezone-aware")
+
+    schedules = getattr(device, "schedules", {}) or {}
+    if get_dict_value(schedules, "active") is False:
+        return None
+    if get_dict_value(schedules, "party_mode_enabled") is True:
+        return None
+
     from_library = _library_next_schedule_start(device, now)
-    if from_library is not None:
+    if from_library is not None and from_library >= now:
         return from_library
 
     slots = schedule_slots(device)
@@ -446,7 +460,7 @@ def next_schedule_start(device: Any, now: datetime) -> datetime | None:
         return None
 
     candidates: list[datetime] = []
-    for offset in range(0, 8):
+    for offset in range(0, 14):
         day = (now + timedelta(days=offset)).date()
         for slot in slots:
             if schedule_day_index(get_dict_value(slot, "day")) != day.weekday():
@@ -531,4 +545,5 @@ def schedule_attributes(
         "one_time_schedule": get_dict_value(schedules, "one_time_schedule"),
         "party_mode_enabled": get_dict_value(schedules, "party_mode_enabled"),
         "time_extension": get_dict_value(schedules, "time_extension"),
+        "next_schedule_start": get_dict_value(schedules, "next_schedule_start"),
     }

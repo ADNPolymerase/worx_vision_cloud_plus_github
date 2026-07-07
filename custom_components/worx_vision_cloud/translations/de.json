@@ -199,6 +199,12 @@
       },
       "last_update_age": {
         "name": "Alter der letzten Aktualisierung"
+      },
+      "cloud_statistics_updated": {
+        "name": "Cloud-Statistik aktualisiert"
+      },
+      "mowing_time_today": {
+        "name": "Mähzeit heute"
       }
     },
     "binary_sensor": {

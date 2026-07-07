@@ -199,6 +199,12 @@
       },
       "last_update_age": {
         "name": "Ancienneté de la dernière mise à jour"
+      },
+      "cloud_statistics_updated": {
+        "name": "Statistiques cloud actualisées"
+      },
+      "mowing_time_today": {
+        "name": "Temps de tonte aujourd'hui"
       }
     },
     "binary_sensor": {

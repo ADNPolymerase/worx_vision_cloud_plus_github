@@ -199,6 +199,12 @@
       },
       "last_update_age": {
         "name": "Tijd sinds laatste update"
+      },
+      "cloud_statistics_updated": {
+        "name": "Cloudstatistieken bijgewerkt"
+      },
+      "mowing_time_today": {
+        "name": "Maaitijd vandaag"
       }
     },
     "binary_sensor": {

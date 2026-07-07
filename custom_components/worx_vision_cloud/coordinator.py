@@ -3,18 +3,21 @@ from __future__ import annotations
 
 import asyncio
 from collections import deque
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime, time, timedelta
 import json
 import logging
 from typing import Any, Callable
 
 from aiohttp import ClientError, ClientTimeout
 
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.event import async_track_time_interval
+from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.util import dt as dt_util
 
 from pyworxcloud import DeviceHandler, LandroidEvent, WorxCloud
 from pyworxcloud.exceptions import (
@@ -26,7 +29,8 @@ from pyworxcloud.exceptions import (
 from pyworxcloud.utils.requests import AGET, HEADERS
 
 from .const import DOMAIN
-from .helpers import rtk_position
+from .helpers import MOWING_STATUS_IDS, STARTING_STATUS_IDS, get_dict_value, rtk_position
+from .statistics import DailyStatisticsTracker
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -41,6 +45,8 @@ RTK_ADDRESS_USER_AGENT = (
 PRODUCT_ITEM_CACHE_TTL = timedelta(minutes=5)
 LIVE_REFRESH_INTERVAL = timedelta(minutes=5)
 FIRMWARE_UPGRADE_CACHE_TTL = timedelta(minutes=30)
+STATISTICS_STORAGE_VERSION = 1
+STATISTICS_SAVE_DELAY = 60
 RTK_TRAIL_MAX_POINTS = 300
 DEFAULT_ONE_TIME_MOWING_RUNTIME = 60
 DEFAULT_ONE_TIME_MOWING_EDGE_CUT = False
@@ -69,11 +75,14 @@ def _normalize_zone_ids(zones: list[int] | None) -> list[int]:
 class WorxVisionCoordinator(DataUpdateCoordinator[dict[str, DeviceHandler]]):
     """Coordinate push and manual updates."""
 
-    def __init__(self, hass: HomeAssistant, cloud: WorxCloud) -> None:
+    def __init__(
+        self, hass: HomeAssistant, cloud: WorxCloud, config_entry: ConfigEntry
+    ) -> None:
         """Initialize coordinator."""
         super().__init__(
             hass,
             _LOGGER,
+            config_entry=config_entry,
             name=DOMAIN,
             update_interval=None,
             # `_device_map()` returns the same DeviceHandler instances pyworxcloud
@@ -85,6 +94,14 @@ class WorxVisionCoordinator(DataUpdateCoordinator[dict[str, DeviceHandler]]):
             always_update=True,
         )
         self.cloud = cloud
+        self._statistics_store = Store[dict[str, Any]](
+            hass,
+            STATISTICS_STORAGE_VERSION,
+            f"{DOMAIN}.{config_entry.entry_id}.statistics",
+        )
+        self._statistics = DailyStatisticsTracker()
+        self._statistics_save_pending = False
+        self._shutdown_complete = False
         self._event_lock = asyncio.Lock()
         self._rtk_address_lock = asyncio.Lock()
         self._last_rtk_address_lookup: datetime | None = None
@@ -102,6 +119,10 @@ class WorxVisionCoordinator(DataUpdateCoordinator[dict[str, DeviceHandler]]):
 
     async def async_setup(self) -> None:
         """Attach pyworxcloud callbacks."""
+        self._statistics = DailyStatisticsTracker(
+            await self._statistics_store.async_load()
+        )
+
         def _on_data_received(name: str, device: DeviceHandler) -> None:
             del name
             self._schedule_push_update(device)
@@ -118,12 +139,20 @@ class WorxVisionCoordinator(DataUpdateCoordinator[dict[str, DeviceHandler]]):
         )
 
     async def async_shutdown(self) -> None:
-        """Detach callbacks."""
+        """Detach callbacks and persist statistics."""
+        if self._shutdown_complete:
+            return
+        self._shutdown_complete = True
         self.cloud.set_callback(LandroidEvent.DATA_RECEIVED, lambda **_: None)
         self.cloud.set_callback(LandroidEvent.API, lambda **_: None)
         if self._unsub_periodic_refresh is not None:
             self._unsub_periodic_refresh()
             self._unsub_periodic_refresh = None
+        self._statistics_save_pending = False
+        try:
+            await self._statistics_store.async_save(self._statistics.as_dict())
+        finally:
+            await super().async_shutdown()
 
     async def _async_periodic_device_refresh(self, _now: datetime) -> None:
         """Ask each mower for a fresh update on a fixed cadence.
@@ -154,6 +183,7 @@ class WorxVisionCoordinator(DataUpdateCoordinator[dict[str, DeviceHandler]]):
         async with self._event_lock:
             self._preserve_enriched_attributes(str(serial), device)
             self._remember_rtk_position(str(serial), device)
+            self._update_daily_statistics(str(serial), device)
             data = dict(self.data or {})
             data[str(serial)] = device
             self.async_set_updated_data(data)
@@ -880,6 +910,13 @@ class WorxVisionCoordinator(DataUpdateCoordinator[dict[str, DeviceHandler]]):
         product_item = await self.async_get_product_item(serial_number)
         if product_item is not None:
             setattr(device, "_worx_vision_product_item", product_item)
+            cached_product_item = self._product_item_cache.get(serial_number)
+            if cached_product_item is not None:
+                setattr(
+                    device,
+                    "_worx_vision_product_item_updated_at",
+                    cached_product_item[0],
+                )
             _LOGGER.debug(
                 "Enriched device %s: area_mowed=%s",
                 serial_number,
@@ -900,6 +937,7 @@ class WorxVisionCoordinator(DataUpdateCoordinator[dict[str, DeviceHandler]]):
             setattr(device, "_worx_vision_rtk_map", map_data)
 
         self._remember_rtk_position(serial_number, device)
+        self._update_daily_statistics(serial_number, device)
 
     async def _api_get(self, path: str) -> Any:
         """Fetch a private Worx API path using pyworxcloud's session/token."""
@@ -992,12 +1030,75 @@ class WorxVisionCoordinator(DataUpdateCoordinator[dict[str, DeviceHandler]]):
 
         for attr in (
             "_worx_vision_product_item",
+            "_worx_vision_product_item_updated_at",
             "_worx_vision_firmware_upgrade",
             "_worx_vision_rtk_map",
         ):
             if hasattr(device, attr) or not hasattr(previous, attr):
                 continue
             setattr(device, attr, getattr(previous, attr))
+
+    def _update_daily_statistics(
+        self, serial_number: str, device: DeviceHandler
+    ) -> None:
+        """Update persisted daily counters from one device snapshot."""
+        product_item = getattr(device, "_worx_vision_product_item", {}) or {}
+        status_id = get_dict_value(getattr(device, "status", {}) or {}, "id")
+        try:
+            mowing_active = (
+                int(status_id) in MOWING_STATUS_IDS
+                or int(status_id) in STARTING_STATUS_IDS
+            )
+        except (TypeError, ValueError):
+            mowing_active = False
+
+        now_utc = datetime.now(UTC)
+        local_now = dt_util.as_local(now_utc)
+        local_midnight_utc = datetime.combine(
+            local_now.date(),
+            time.min,
+            tzinfo=local_now.tzinfo,
+        ).astimezone(UTC)
+        changed = self._statistics.update(
+            serial_number,
+            area_total=get_dict_value(product_item, "area_mowed"),
+            mowing_active=mowing_active,
+            now_utc=now_utc,
+            local_day=local_now.date(),
+            local_midnight_utc=local_midnight_utc,
+        )
+        if changed:
+            if self._statistics_save_pending:
+                return
+            self._statistics_save_pending = True
+            self._statistics_store.async_delay_save(
+                self._statistics_store_data,
+                STATISTICS_SAVE_DELAY,
+            )
+
+    def _statistics_store_data(self) -> dict[str, Any]:
+        """Return current statistics and allow scheduling the next save."""
+        self._statistics_save_pending = False
+        return self._statistics.as_dict()
+
+    def area_mowed_today(self, serial_number: str) -> float | None:
+        """Return the cloud counter increase since local midnight."""
+        return self._statistics.area_mowed_today(
+            serial_number,
+            dt_util.now().date(),
+        )
+
+    def daily_area_details(self, serial_number: str) -> dict[str, Any]:
+        """Return diagnostics for the cloud daily-area calculation."""
+        return self._statistics.area_details(serial_number)
+
+    def mowing_minutes_today(self, serial_number: str) -> float:
+        """Return locally observed mowing minutes since local midnight."""
+        return self._statistics.mowing_minutes_today(
+            serial_number,
+            datetime.now(UTC),
+            dt_util.now().date(),
+        )
 
     def _update_cached_product_item(self, serial_number: str, **fields: Any) -> None:
         """Patch cached product item fields after a successful write."""

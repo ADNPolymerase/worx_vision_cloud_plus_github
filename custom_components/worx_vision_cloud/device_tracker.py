@@ -5,6 +5,7 @@ from typing import Any
 
 from homeassistant.components.device_tracker import SourceType, TrackerEntity
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import ATTR_BATTERY_LEVEL
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
@@ -61,9 +62,13 @@ class WorxVisionLocationTracker(WorxVisionEntity, TrackerEntity):
         """Return location accuracy in meters."""
         return 1.0
 
-    @property
-    def battery_level(self) -> int | None:
-        """Return mower battery level."""
+    def _battery_level(self) -> int | None:
+        """Return mower battery level for compatibility attributes.
+
+        Not a `battery_level` property override: BaseTrackerEntity deprecated
+        that property (removal planned for Home Assistant 2027.7), so the value
+        is exposed as a plain state attribute instead.
+        """
         value = get_dict_value(getattr(self.device, "battery", {}), "percent")
         try:
             return int(value)
@@ -73,8 +78,11 @@ class WorxVisionLocationTracker(WorxVisionEntity, TrackerEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return RTK map and receiver metadata."""
-        return {
+        attributes = {
             key: value
             for key, value in rtk_location_attributes(self.device).items()
             if value is not None
         }
+        if (battery_level := self._battery_level()) is not None:
+            attributes[ATTR_BATTERY_LEVEL] = battery_level
+        return attributes

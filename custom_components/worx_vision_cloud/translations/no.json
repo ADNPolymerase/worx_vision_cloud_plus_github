@@ -199,6 +199,12 @@
       },
       "last_update_age": {
         "name": "Tid siden siste oppdatering"
+      },
+      "cloud_statistics_updated": {
+        "name": "Skystatistikk oppdatert"
+      },
+      "mowing_time_today": {
+        "name": "Klippetid i dag"
       }
     },
     "binary_sensor": {

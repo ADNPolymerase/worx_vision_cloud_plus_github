@@ -199,6 +199,12 @@
       },
       "last_update_age": {
         "name": "Tid sedan senaste uppdatering"
+      },
+      "cloud_statistics_updated": {
+        "name": "Molnstatistik uppdaterad"
+      },
+      "mowing_time_today": {
+        "name": "Klipptid idag"
       }
     },
     "binary_sensor": {

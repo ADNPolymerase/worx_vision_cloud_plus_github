@@ -18,8 +18,13 @@ from homeassistant.exceptions import (
     ConfigEntryNotReady,
     HomeAssistantError,
 )
-from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import (
+    area_registry as ar,
+    device_registry as dr,
+    entity_registry as er,
+)
 import homeassistant.helpers.config_validation as cv
+from homeassistant.util import slugify
 import voluptuous as vol
 
 from pyworxcloud import WorxCloud
@@ -93,7 +98,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         await _safe_disconnect(cloud)
         raise ConfigEntryNotReady(f"Could not connect to Worx Cloud: {err}") from err
 
-    coordinator = WorxVisionCoordinator(hass, cloud)
+    coordinator = WorxVisionCoordinator(hass, cloud, entry)
     await coordinator.async_setup()
     await coordinator.async_config_entry_first_refresh()
 
@@ -102,7 +107,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         await _safe_disconnect(cloud)
         raise ConfigEntryNotReady("No cloud mower found on this Worx/Landroid account")
 
-    _async_migrate_entity_registry(hass, coordinator.data)
+    _async_migrate_entity_registry(hass, coordinator.data, entry)
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = WorxVisionRuntimeData(
         cloud=cloud,
@@ -228,23 +233,79 @@ async def _safe_disconnect(cloud: WorxCloud) -> None:
         _LOGGER.debug("Ignoring error while disconnecting Worx cloud", exc_info=True)
 
 
-def _async_migrate_entity_registry(hass: HomeAssistant, devices: dict) -> None:
+def _async_migrate_entity_registry(
+    hass: HomeAssistant,
+    devices: dict,
+    entry: ConfigEntry,
+) -> None:
     """Clean up entity registry changes introduced by newer entity names."""
     registry = er.async_get(hass)
+    device_registry = dr.async_get(hass)
+    area_registry = ar.async_get(hass)
+    account_email = str(entry.data.get(CONF_EMAIL, "") or "").strip()
+    account_prefix = f"{slugify(account_email)}_" if account_email else ""
+
     for serial_number in devices:
         for domain, unique_id in (
             ("sensor", f"{serial_number}_distance_driven_total"),
             ("sensor", f"{serial_number}_distance_covered"),
             ("sensor", f"{serial_number}_lawn_perimeter"),
+            # Duplicate of the rain delay number entity, removed in 1.5.0.
+            ("sensor", f"{serial_number}_rain_delay"),
             ("binary_sensor", f"{serial_number}_battery_charging"),
             ("binary_sensor", f"{serial_number}_radio_link_pending"),
             ("binary_sensor", f"{serial_number}_schedule_border_cut"),
+            # Read-only duplicates of switch entities, removed in 1.5.0.
+            ("binary_sensor", f"{serial_number}_locked"),
+            ("binary_sensor", f"{serial_number}_party_mode_enabled"),
+            ("binary_sensor", f"{serial_number}_smart_edge_cut"),
+            ("binary_sensor", f"{serial_number}_save_hedgehogs"),
             ("switch", f"{serial_number}_auto_schedule"),
             ("switch", f"{serial_number}_schedule_border_cut"),
         ):
             entity_id = registry.async_get_entity_id(domain, DOMAIN, unique_id)
             if entity_id is not None:
                 registry.async_remove(entity_id)
+
+        if account_prefix:
+            for unique_suffix in (
+                "area_mowed_total",
+                "cloud_statistics_updated",
+                "next_schedule",
+                "estimated_area_mowed_today",
+                "estimated_daily_progress",
+            ):
+                entity_id = registry.async_get_entity_id(
+                    "sensor",
+                    DOMAIN,
+                    f"{serial_number}_{unique_suffix}",
+                )
+                if entity_id is None:
+                    continue
+                object_id = entity_id.partition(".")[2]
+                if not object_id.startswith(account_prefix):
+                    continue
+                new_entity_id = f"sensor.{object_id.removeprefix(account_prefix)}"
+                if registry.async_get(new_entity_id) is None:
+                    registry.async_update_entity(
+                        entity_id,
+                        new_entity_id=new_entity_id,
+                    )
+
+        device_entry = device_registry.async_get_device(
+            identifiers={(DOMAIN, str(serial_number))}
+        )
+        if device_entry is not None and device_entry.area_id is not None:
+            area_entry = area_registry.async_get_area(device_entry.area_id)
+            if (
+                area_entry is not None
+                and account_email
+                and area_entry.name.casefold() == account_email.casefold()
+            ):
+                device_registry.async_update_device(
+                    device_entry.id,
+                    area_id=None,
+                )
 
         rain_entity_id = registry.async_get_entity_id(
             "binary_sensor", DOMAIN, f"{serial_number}_rain_triggered"

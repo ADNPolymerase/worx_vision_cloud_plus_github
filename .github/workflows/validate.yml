@@ -14,6 +14,8 @@ jobs:
           python-version: "3.12"
       - name: Syntax check
         run: python -m compileall -q custom_components/worx_vision_cloud
+      - name: Unit tests
+        run: python -m unittest discover -s tests -v
 
   hassfest:
     runs-on: ubuntu-latest

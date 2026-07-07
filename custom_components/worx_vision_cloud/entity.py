@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_EMAIL
 from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -21,6 +20,15 @@ def _firmware_version(device: DeviceHandler) -> str | None:
         return None if value is None else str(value)
     value = getattr(firmware, "version", None)
     return None if value is None else str(value)
+
+
+def _device_name(device: DeviceHandler) -> str:
+    """Return a mower name without an account e-mail prefix."""
+    value = str(getattr(device, "name", "") or "").strip()
+    first_part, separator, mower_name = value.partition(" ")
+    if separator and "@" in first_part and mower_name.strip():
+        return mower_name.strip()
+    return value or "Worx Landroid Vision"
 
 
 class WorxVisionEntity(CoordinatorEntity[WorxVisionCoordinator]):
@@ -59,7 +67,7 @@ class WorxVisionEntity(CoordinatorEntity[WorxVisionCoordinator]):
         manufacturer = "Worx"
         model = str(getattr(device, "model", "Landroid Vision Cloud"))
         serial_number = str(getattr(device, "serial_number", self._serial_number))
-        name = str(getattr(device, "name", "Worx Landroid Vision"))
+        name = _device_name(device)
 
         info = {
             "identifiers": {(DOMAIN, serial_number)},
@@ -68,7 +76,6 @@ class WorxVisionEntity(CoordinatorEntity[WorxVisionCoordinator]):
             "name": name,
             "serial_number": serial_number,
             "sw_version": _firmware_version(device),
-            "suggested_area": self._entry.data.get(CONF_EMAIL),
         }
 
         mac_address = getattr(device, "mac_address", None)

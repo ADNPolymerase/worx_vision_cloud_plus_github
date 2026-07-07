@@ -1,18 +1,9 @@
 name: Publish Release
 
+# Manual-only: pushing a manifest/changelog change must not silently re-tag
+# the current stable release with unreleased code. Trigger from the Actions
+# tab (or `gh workflow run`) once a release is actually intended.
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - ".github/workflows/publish-release.yml"
-      - "brand/**"
-      - "CHANGELOG.md"
-      - "hacs.json"
-      - "icon.png"
-      - "logo.png"
-      - "custom_components/worx_vision_cloud/brand/**"
-      - "custom_components/worx_vision_cloud/manifest.json"
   workflow_dispatch:
 
 permissions:
@@ -53,7 +44,7 @@ jobs:
                   heading = line[3:].strip()
                   if capture:
                       break
-                  capture = heading == version
+                  capture = heading == version or heading.startswith(f"{version} -")
                   continue
               if capture:
                   notes.append(line)

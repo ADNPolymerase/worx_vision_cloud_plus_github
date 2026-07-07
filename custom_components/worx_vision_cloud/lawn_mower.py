@@ -15,7 +15,11 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from .const import DOMAIN
 from .entity import WorxVisionEntity
 from .helpers import (
+    DOCKED_STATUS_IDS,
+    ERROR_STATUS_IDS,
     MOWING_STATUS_IDS,
+    PAUSED_STATUS_IDS,
+    RETURNING_STATUS_IDS,
     STARTING_STATUS_IDS,
     get_dict_value,
     rtk_at_station,
@@ -24,10 +28,6 @@ from .helpers import (
 
 _LOGGER = logging.getLogger(__name__)
 
-RETURNING_STATUS_IDS = {4, 5, 6, 30, 104}
-PAUSED_STATUS_IDS = {34}
-DOCKED_STATUS_IDS = {1}
-ERROR_STATUS_IDS = {9, 10, 13}
 RAIN_DELAY_ERROR_DESCRIPTIONS = {"rain delay", "rain_delay"}
 
 

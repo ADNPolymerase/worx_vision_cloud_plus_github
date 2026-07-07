@@ -38,8 +38,6 @@ from .const import (
 from .entity import WorxVisionEntity
 from .helpers import (
     MAX_STRING_STATE_LENGTH,
-    MOWING_STATUS_IDS,
-    STARTING_STATUS_IDS,
     get_dict_value,
     next_schedule_start,
     raw_entity_path_map,
@@ -305,15 +303,30 @@ def _work_time_total_minutes(device) -> float | None:
 
 
 def _mowing_efficiency(device) -> float | None:
-    # Deliberately pairs area with the REST-only work_time (not
-    # _work_time_total_minutes' live-preferring value): both figures come from
-    # the same product-item snapshot, so the ratio stays internally consistent
-    # even though it only refreshes as often as that REST endpoint does.
+    """Return lifetime covered area per hour of blade-active time (m²/h).
+
+    Prefers blade-active time over total mower runtime: runtime includes
+    driving to zones, docking and idling with blades off, which understates
+    the real coverage rate the estimated daily sensors multiply by. Falls
+    back to total work time when no blade figure is available.
+    """
     area = _area_mowed_total(device)
-    work_minutes = _as_float(_product_item(device, "mower_work_time"))
+    work_minutes = _as_float(_blades(device, "total_on"))
+    if work_minutes in (None, 0):
+        work_minutes = _as_float(_statistics(device, "worktime_blades_on"))
+    if work_minutes in (None, 0):
+        work_minutes = _as_float(_product_item(device, "mower_work_time"))
     if area is None or work_minutes in (None, 0):
         return None
     return round(area / (work_minutes / 60), 2)
+
+
+def _cloud_statistics_updated(device) -> datetime | None:
+    """Return when the cumulative Worx product statistics were fetched."""
+    value = getattr(device, "_worx_vision_product_item_updated_at", None)
+    if isinstance(value, datetime):
+        return value.astimezone(UTC)
+    return None
 
 
 def _last_update_age(device) -> int | None:
@@ -707,7 +720,11 @@ STANDARD_SENSORS: tuple[WorxSensorDescription, ...] = (
         state_class=SensorStateClass.TOTAL_INCREASING,
         icon="mdi:grass",
         value_fn=_area_mowed_total,
-        attrs_fn=lambda d: {"lawn_area": _lawn_area(d)},
+        attrs_fn=lambda d: {
+            "lawn_area": _lawn_area(d),
+            "source": "worx_cloud_cumulative_counter",
+            "cloud_data_updated_at": _cloud_statistics_updated(d),
+        },
     ),
     WorxSensorDescription(
         key="lawn_area",
@@ -727,9 +744,19 @@ STANDARD_SENSORS: tuple[WorxSensorDescription, ...] = (
         icon="mdi:speedometer",
         value_fn=_mowing_efficiency,
         attrs_fn=lambda d: {
-            "area_mowed": _area_mowed_total(d),
-            "mower_work_time": _product_item(d, "mower_work_time"),
+            "area_mowed_total": _area_mowed_total(d),
+            "blade_runtime_total": _blades(d, "total_on")
+            or _statistics(d, "worktime_blades_on"),
+            "fallback_mower_work_time": _product_item(d, "mower_work_time"),
         },
+    ),
+    WorxSensorDescription(
+        key="cloud_statistics_updated",
+        translation_key="cloud_statistics_updated",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        icon="mdi:cloud-clock-outline",
+        value_fn=_cloud_statistics_updated,
     ),
     WorxSensorDescription(
         key="rtk_map",
@@ -938,8 +965,10 @@ async def async_setup_entry(
         entities.append(WorxNextScheduleSensor(coordinator, entry, serial_number))
         entities.append(WorxLastUpdateSensor(coordinator, entry, serial_number))
         entities.append(WorxAreaMowedTodaySensor(coordinator, entry, serial_number))
+        entities.append(WorxMowingTimeTodaySensor(coordinator, entry, serial_number))
         entities.append(WorxDailyProgressSensor(coordinator, entry, serial_number))
         entities.append(WorxRemainingProgressSensor(coordinator, entry, serial_number))
+        entities.append(WorxMowingTimeTodaySensor(coordinator, entry, serial_number))
         entities.append(WorxEstimatedAreaTodaySensor(coordinator, entry, serial_number))
         entities.append(WorxEstimatedDailyProgressSensor(coordinator, entry, serial_number))
 
@@ -1106,64 +1135,19 @@ class WorxScheduleSensor(WorxVisionEntity, SensorEntity):
         return {key: value for key, value in attrs.items() if value is not None}
 
 
-class _WorxDailyMowedBase(WorxVisionEntity, RestoreSensor):
-    """Base for sensors derived from the area mowed since local midnight.
+class WorxAreaMowedTodaySensor(WorxVisionEntity, SensorEntity):
+    """Area added to the cumulative cloud counter since local midnight.
 
-    The mower only reports a lifetime total area, so the daily value is the
-    difference from a baseline captured at the start of each day. The baseline
-    is persisted as state attributes so it survives Home Assistant restarts.
+    The daily baseline lives in the coordinator's persisted statistics
+    tracker (keyed by serial number), so every daily sensor shares the same
+    baseline and the value survives restarts, entity renames and entity
+    re-creation.
     """
-
-    _attr_state_class = SensorStateClass.MEASUREMENT
-
-    def __init__(self, coordinator, entry, serial_number: str, key: str) -> None:
-        """Initialize the daily base sensor."""
-        super().__init__(coordinator, entry, serial_number, key)
-        self._baseline_total: float | None = None
-        self._baseline_date: str | None = None
-
-    async def async_added_to_hass(self) -> None:
-        """Restore the saved daily baseline."""
-        await super().async_added_to_hass()
-        last_state = await self.async_get_last_state()
-        if last_state is None:
-            return
-        try:
-            self._baseline_total = float(last_state.attributes["baseline_total"])
-        except (KeyError, TypeError, ValueError):
-            self._baseline_total = None
-        self._baseline_date = last_state.attributes.get("baseline_date")
-
-    def _today_area(self) -> float | None:
-        """Return the area mowed since local midnight (m²)."""
-        total = _area_mowed_total(self.device)
-        if total is None:
-            return None
-        today = dt_util.now().date().isoformat()
-        if (
-            self._baseline_total is None
-            or self._baseline_date != today
-            or total < self._baseline_total
-        ):
-            self._baseline_total = total
-            self._baseline_date = today
-        return round(max(0.0, total - self._baseline_total), 2)
-
-    @property
-    def extra_state_attributes(self) -> dict[str, Any]:
-        """Persist the daily baseline so it survives restarts."""
-        return {
-            "baseline_total": self._baseline_total,
-            "baseline_date": self._baseline_date,
-        }
-
-
-class WorxAreaMowedTodaySensor(_WorxDailyMowedBase):
-    """Area mowed since local midnight."""
 
     _attr_translation_key = "area_mowed_today"
     _attr_device_class = SensorDeviceClass.AREA
     _attr_native_unit_of_measurement = UnitOfArea.SQUARE_METERS
+    _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_icon = "mdi:grass"
 
     def __init__(self, coordinator, entry, serial_number: str) -> None:
@@ -1172,220 +1156,196 @@ class WorxAreaMowedTodaySensor(_WorxDailyMowedBase):
 
     @property
     def native_value(self) -> float | None:
-        """Return today's mowed area."""
-        return self._today_area()
+        """Return today's cloud-counter delta."""
+        return self.coordinator.area_mowed_today(self._serial_number)
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        """Return the baseline plus reference figures."""
+        """Explain the source and baseline behind the daily value."""
         return {
-            **super().extra_state_attributes,
-            "area_mowed_total": _area_mowed_total(self.device),
+            "source": "worx_cloud_cumulative_counter_delta",
+            **self.coordinator.daily_area_details(self._serial_number),
             "lawn_area": _lawn_area(self.device),
+            "cloud_data_updated_at": _cloud_statistics_updated(self.device),
         }
 
 
-class WorxDailyProgressSensor(_WorxDailyMowedBase):
-    """Percentage of the lawn mowed today."""
+class WorxDailyProgressSensor(WorxVisionEntity, SensorEntity):
+    """Percentage of the lawn covered today, from the cloud counter delta."""
 
     _attr_translation_key = "daily_progress"
     _attr_native_unit_of_measurement = PERCENTAGE
+    _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_icon = "mdi:progress-check"
 
     def __init__(self, coordinator, entry, serial_number: str) -> None:
         """Initialize daily progress."""
         super().__init__(coordinator, entry, serial_number, "daily_progress")
 
+    def _progress(self) -> float | None:
+        """Return today's covered area as a percentage of the lawn size."""
+        area = self.coordinator.area_mowed_today(self._serial_number)
+        lawn_area = _lawn_area(self.device)
+        if area is None or lawn_area in (None, 0):
+            return None
+        return round(max(0, min(100, area / lawn_area * 100)), 1)
+
     @property
     def native_value(self) -> float | None:
         """Return today's progress in percent."""
-        today = self._today_area()
-        lawn_area = _lawn_area(self.device)
-        if today is None or lawn_area in (None, 0):
-            return None
-        return round(max(0, min(100, today / lawn_area * 100)), 1)
+        return self._progress()
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return the values used by the progress calculation."""
+        return {
+            "source": "worx_cloud_cumulative_counter_delta",
+            "area_mowed_today": self.coordinator.area_mowed_today(
+                self._serial_number
+            ),
+            "lawn_area": _lawn_area(self.device),
+            "cloud_data_updated_at": _cloud_statistics_updated(self.device),
+        }
 
 
-class WorxRemainingProgressSensor(_WorxDailyMowedBase):
+class WorxRemainingProgressSensor(WorxDailyProgressSensor):
     """Percentage of the lawn still to mow today."""
 
     _attr_translation_key = "remaining_progress"
-    _attr_native_unit_of_measurement = PERCENTAGE
     _attr_icon = "mdi:progress-clock"
 
     def __init__(self, coordinator, entry, serial_number: str) -> None:
         """Initialize remaining progress."""
-        super().__init__(coordinator, entry, serial_number, "remaining_progress")
+        WorxVisionEntity.__init__(
+            self,
+            coordinator,
+            entry,
+            serial_number,
+            "remaining_progress",
+        )
 
     @property
     def native_value(self) -> float | None:
-        """Return the remaining lawn percentage for today."""
-        today = self._today_area()
-        lawn_area = _lawn_area(self.device)
-        if today is None or lawn_area in (None, 0):
-            return None
-        progress = max(0, min(100, today / lawn_area * 100))
-        return round(max(0, 100 - progress), 1)
+        """Return the complement of today's progress."""
+        progress = self._progress()
+        return None if progress is None else round(max(0, 100 - progress), 1)
 
 
-def _is_mowing_now(device) -> bool:
-    """Return whether the mower is currently mowing or starting to mow.
+class WorxMowingTimeTodaySensor(WorxVisionEntity, SensorEntity):
+    """Locally observed time spent mowing since local midnight.
 
-    Mirrors lawn_mower.py's own definition of the MOWING activity, so this
-    always agrees with what the lawn_mower entity itself shows.
-    """
-    status_id = get_dict_value(getattr(device, "status", {}), "id", -1)
-    return status_id in MOWING_STATUS_IDS or status_id in STARTING_STATUS_IDS
-
-
-class _WorxDailyMowingTimeBase(WorxVisionEntity, RestoreSensor):
-    """Base for sensors derived from actual mowing time since local midnight.
-
-    Worx's own work-time statistics (device.statistics / product-item) are
-    only included in some MQTT payloads and can go stale for hours during
-    active mowing (confirmed live: unchanged for 20+ minutes of continuous
-    mowing despite periodic forced refreshes). Instead, this tracks wall-clock
-    time spent in the mowing/starting status ourselves, from every coordinator
-    update, independent of whether Worx reports fresh statistics.
+    Worx's own work-time statistics are only included in some MQTT payloads
+    and can go stale for hours during active mowing, so the coordinator
+    tracks wall-clock time spent in the mowing/starting statuses itself.
+    This exposes that figure directly; the estimated area/progress sensors
+    multiply it by the average mowing efficiency.
     """
 
+    _attr_translation_key = "mowing_time_today"
+    _attr_device_class = SensorDeviceClass.DURATION
+    _attr_native_unit_of_measurement = UnitOfTime.MINUTES
     _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_icon = "mdi:timer-play-outline"
 
-    def __init__(self, coordinator, entry, serial_number: str, key: str) -> None:
-        """Initialize the daily mowing-time base sensor."""
-        super().__init__(coordinator, entry, serial_number, key)
-        self._accumulated_seconds: float = 0.0
-        self._streak_started_at: datetime | None = None
-        self._baseline_date: str | None = None
+    def __init__(self, coordinator, entry, serial_number: str) -> None:
+        """Initialize mowing time today."""
+        super().__init__(coordinator, entry, serial_number, "mowing_time_today")
 
-    async def async_added_to_hass(self) -> None:
-        """Restore the saved daily accumulator."""
-        await super().async_added_to_hass()
-        last_state = await self.async_get_last_state()
-        if last_state is None:
-            return
-        try:
-            self._accumulated_seconds = float(
-                last_state.attributes["accumulated_seconds"]
-            )
-        except (KeyError, TypeError, ValueError):
-            self._accumulated_seconds = 0.0
-        self._streak_started_at = _as_datetime(
-            last_state.attributes.get("streak_started_at")
-        )
-        self._baseline_date = last_state.attributes.get("baseline_date")
-
-    def _today_mowing_minutes(self) -> float:
-        """Return actual mowing time since local midnight (minutes)."""
-        now = dt_util.utcnow()
-        today = dt_util.now().date().isoformat()
-        mowing_now = _is_mowing_now(self.device)
-
-        if self._baseline_date != today:
-            # New day: drop yesterday's accumulator. A streak already running
-            # across midnight restarts from now rather than trying to split it.
-            self._accumulated_seconds = 0.0
-            self._baseline_date = today
-            self._streak_started_at = now if mowing_now else None
-
-        if mowing_now and self._streak_started_at is None:
-            self._streak_started_at = now
-        elif not mowing_now and self._streak_started_at is not None:
-            self._accumulated_seconds += (now - self._streak_started_at).total_seconds()
-            self._streak_started_at = None
-
-        total_seconds = self._accumulated_seconds
-        if mowing_now and self._streak_started_at is not None:
-            total_seconds += (now - self._streak_started_at).total_seconds()
-        return round(max(0.0, total_seconds) / 60, 2)
+    @property
+    def native_value(self) -> float:
+        """Return today's mowing minutes."""
+        return self.coordinator.mowing_minutes_today(self._serial_number)
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        """Persist the accumulator so it survives restarts."""
-        return {
-            "accumulated_seconds": self._accumulated_seconds,
-            "streak_started_at": self._streak_started_at.isoformat()
-            if self._streak_started_at
-            else None,
-            "baseline_date": self._baseline_date,
-        }
+        """Explain how the value is obtained."""
+        return {"source": "local_mowing_status_wall_clock"}
 
 
-class WorxEstimatedAreaTodaySensor(_WorxDailyMowingTimeBase):
+class WorxEstimatedAreaTodaySensor(WorxVisionEntity, SensorEntity):
     """Estimated area mowed today, from today's mowing time and average efficiency.
 
     area_mowed only refreshes when Worx's REST product-item endpoint reports a
     new figure, which can lag for hours during active mowing. This sensor
     estimates today's coverage instead as time actually spent mowing today
-    (tracked locally, independent of Worx's own statistics reporting)
-    multiplied by the mower's average mowing efficiency (m2/h, itself
-    REST-sourced but changes slowly), so it moves during the day even when
-    Total/Today area mowed are stuck waiting for Worx to recompute the real
-    figure.
+    (tracked by the coordinator, independent of Worx's own statistics
+    reporting) multiplied by the mower's average mowing efficiency (m²/h),
+    so it moves during the day even when Total/Today area mowed are stuck
+    waiting for Worx to recompute the real figure.
     """
 
     _attr_translation_key = "estimated_area_mowed_today"
     _attr_device_class = SensorDeviceClass.AREA
     _attr_native_unit_of_measurement = UnitOfArea.SQUARE_METERS
+    _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_icon = "mdi:grass"
 
     def __init__(self, coordinator, entry, serial_number: str) -> None:
         """Initialize estimated area mowed today."""
         super().__init__(coordinator, entry, serial_number, "estimated_area_mowed_today")
 
-    @property
-    def native_value(self) -> float | None:
-        """Return today's estimated mowed area."""
-        mowing_minutes = self._today_mowing_minutes()
+    def _estimated_area(self) -> float | None:
+        """Return today's mowing time multiplied by the average efficiency."""
         efficiency = _mowing_efficiency(self.device)
         if efficiency is None:
             return None
-        return round(mowing_minutes / 60 * efficiency, 2)
+        minutes = self.coordinator.mowing_minutes_today(self._serial_number)
+        return round(minutes / 60 * efficiency, 2)
+
+    @property
+    def native_value(self) -> float | None:
+        """Return today's estimated mowed area."""
+        return self._estimated_area()
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        """Return the accumulator plus the figures used for the estimate."""
+        """Return the figures used for the estimate."""
         return {
-            **super().extra_state_attributes,
-            "mowing_minutes_today": self._today_mowing_minutes(),
+            "source": "local_mowing_time_x_lifetime_efficiency",
+            "mowing_minutes_today": self.coordinator.mowing_minutes_today(
+                self._serial_number
+            ),
             "mowing_efficiency": _mowing_efficiency(self.device),
         }
 
 
-class WorxEstimatedDailyProgressSensor(_WorxDailyMowingTimeBase):
+class WorxEstimatedDailyProgressSensor(WorxEstimatedAreaTodaySensor):
     """Estimated percentage of the lawn mowed today.
 
     Same estimate as WorxEstimatedAreaTodaySensor (today's mowing time x
     average efficiency), expressed as a percentage of the known lawn area, so
-    it moves during the day even when the REST-based daily progress is stuck.
+    it moves during the day even when the cloud-based daily progress is stuck.
     """
 
     _attr_translation_key = "estimated_daily_progress"
+    _attr_device_class = None
     _attr_native_unit_of_measurement = PERCENTAGE
     _attr_icon = "mdi:progress-check"
 
     def __init__(self, coordinator, entry, serial_number: str) -> None:
         """Initialize estimated daily progress."""
-        super().__init__(coordinator, entry, serial_number, "estimated_daily_progress")
+        WorxVisionEntity.__init__(
+            self,
+            coordinator,
+            entry,
+            serial_number,
+            "estimated_daily_progress",
+        )
 
     @property
     def native_value(self) -> float | None:
         """Return today's estimated progress in percent."""
-        mowing_minutes = self._today_mowing_minutes()
-        efficiency = _mowing_efficiency(self.device)
+        area = self._estimated_area()
         lawn_area = _lawn_area(self.device)
-        if efficiency is None or lawn_area in (None, 0):
+        if area is None or lawn_area in (None, 0):
             return None
-        estimated_area = mowing_minutes / 60 * efficiency
-        return round(max(0, min(100, estimated_area / lawn_area * 100)), 1)
+        return round(max(0, min(100, area / lawn_area * 100)), 1)
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        """Return the accumulator plus the figures used for the estimate."""
+        """Return the figures used for the estimate."""
         return {
             **super().extra_state_attributes,
-            "mowing_minutes_today": self._today_mowing_minutes(),
-            "mowing_efficiency": _mowing_efficiency(self.device),
             "lawn_area": _lawn_area(self.device),
         }
 
