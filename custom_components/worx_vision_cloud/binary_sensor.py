@@ -135,6 +135,13 @@ BINARY_SENSORS: tuple[WorxBinarySensorDescription, ...] = (
         },
     ),
     WorxBinarySensorDescription(
+        key="mqtt_connected",
+        translation_key="mqtt_connected",
+        device_class=BinarySensorDeviceClass.CONNECTIVITY,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda d: _as_bool(getattr(d, "mqtt_connected", None)),
+    ),
+    WorxBinarySensorDescription(
         key="rain_triggered",
         translation_key="rain_triggered",
         device_class=BinarySensorDeviceClass.MOISTURE,

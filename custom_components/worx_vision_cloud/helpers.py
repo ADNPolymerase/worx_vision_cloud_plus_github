@@ -418,19 +418,26 @@ def parse_schedule_time(value: Any) -> time | None:
 def _library_next_schedule_start(device: Any, now: datetime) -> datetime | None:
     """Return the next start computed by pyworxcloud, if available.
 
-    pyworxcloud exposes ``schedules["next_schedule_start"]`` as a wall-clock
-    string ("%Y-%m-%d %H:%M:%S"); the digits are the local schedule time, so we
-    attach ``now``'s timezone to make it timezone-aware.
+    pyworxcloud exposes ``schedules["next_schedule_start"]`` either as a
+    datetime or as a wall-clock string; observed formats include both naive
+    ("2026-07-06 10:00:00") and offset-aware ("2026-07-08 08:00:00+02:00")
+    values. Naive values are the local schedule time, so ``now``'s timezone is
+    attached to make them comparable.
     """
     schedules = getattr(device, "schedules", {}) or {}
     raw = get_dict_value(schedules, "next_schedule_start")
-    if not isinstance(raw, str) or not raw.strip():
+    if isinstance(raw, datetime):
+        parsed = raw
+    elif isinstance(raw, str) and raw.strip():
+        try:
+            parsed = datetime.fromisoformat(raw.strip().replace("Z", "+00:00"))
+        except ValueError:
+            return None
+    else:
         return None
-    try:
-        naive = datetime.strptime(raw.strip(), "%Y-%m-%d %H:%M:%S")
-    except ValueError:
-        return None
-    return naive.replace(tzinfo=now.tzinfo)
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=now.tzinfo)
+    return parsed.astimezone(now.tzinfo)
 
 
 def next_schedule_start(device: Any, now: datetime) -> datetime | None:
@@ -446,14 +453,19 @@ def next_schedule_start(device: Any, now: datetime) -> datetime | None:
         raise ValueError("now must be timezone-aware")
 
     schedules = getattr(device, "schedules", {}) or {}
-    if get_dict_value(schedules, "active") is False:
-        return None
     if get_dict_value(schedules, "party_mode_enabled") is True:
         return None
 
     from_library = _library_next_schedule_start(device, now)
     if from_library is not None and from_library >= now:
         return from_library
+
+    # `schedules["active"]` is unreliable on Vision protocol 1 mowers:
+    # observed False while the weekly schedule was genuinely running and
+    # pyworxcloud itself still computed next_schedule_start. Only treat it
+    # as "schedule disabled" when the library offers no future start either.
+    if get_dict_value(schedules, "active") is False:
+        return None
 
     slots = schedule_slots(device)
     if not slots:

@@ -555,6 +555,17 @@ class WorxVisionCoordinator(DataUpdateCoordinator[dict[str, DeviceHandler]]):
         await set_torque(serial_number, int(torque))
         await self.async_request_device_update(serial_number)
 
+    async def async_restart_mower(self, serial_number: str) -> None:
+        """Reboot the mower baseboard."""
+        restart = getattr(self.cloud, "restart", None)
+        if restart is None:
+            raise HomeAssistantError(
+                "The installed pyworxcloud version does not support restarting"
+            )
+
+        await restart(serial_number)
+        await self.async_request_device_update(serial_number)
+
     async def async_toggle_schedule(self, serial_number: str, enabled: bool) -> None:
         """Enable or disable the mower's native schedule."""
         toggle_schedule = getattr(self.cloud, "toggle_schedule", None)

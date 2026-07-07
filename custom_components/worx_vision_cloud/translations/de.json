@@ -217,6 +217,9 @@
       "mqtt_registered": {
         "name": "MQTT registriert"
       },
+      "mqtt_connected": {
+        "name": "MQTT verbunden"
+      },
       "rain_triggered": {
         "name": "Regen erkannt"
       },
@@ -277,6 +280,9 @@
       },
       "start_one_time_mowing": {
         "name": "Einmaliges Mähen starten"
+      },
+      "restart": {
+        "name": "Mäher neu starten"
       }
     },
     "number": {

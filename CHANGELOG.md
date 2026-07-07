@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- Fixed the Next schedule sensor going unknown on Vision protocol 1 mowers:
+  pyworxcloud reports `schedules["active"]` as False on these models even
+  while the weekly schedule genuinely runs, so the inactive flag now only
+  suppresses the sensor when the library offers no future start either. The
+  library timestamp parser also accepts offset-aware values
+  (e.g. `2026-07-08 08:00:00+02:00`) and datetime objects, both observed on
+  real devices.
+- Added a Restart mower button (diagnostic) to reboot the mower baseboard
+  remotely when it is stuck.
+- Added an MQTT connected diagnostic binary sensor exposing the live push
+  connection state, complementing the registration-only MQTT registered
+  sensor.
 - Moved the daily area/progress baselines and the local mowing-time counter
   from per-entity restored state into a coordinator-level tracker persisted in
   Home Assistant storage (synced back from upstream SmartServicePL 1.2.0):

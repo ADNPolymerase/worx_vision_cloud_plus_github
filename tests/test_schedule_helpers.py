@@ -63,9 +63,12 @@ class NextScheduleTests(unittest.TestCase):
 
     def test_disabled_or_paused_schedule_has_no_next_start(self) -> None:
         for schedules in (
+            # active=False only blocks when the library offers no future
+            # start; here the value is stale, so nothing is derived either.
             {
                 "active": False,
-                "next_schedule_start": "2026-07-06 10:00:00",
+                "next_schedule_start": "2026-07-06 07:00:00",
+                "slots": [{"day": "tuesday", "start": "09:30"}],
             },
             {
                 "active": True,
@@ -80,6 +83,38 @@ class NextScheduleTests(unittest.TestCase):
                         self.now,
                     )
                 )
+
+    def test_inactive_flag_does_not_override_future_library_value(self) -> None:
+        # Observed on a Vision protocol 1 mower: schedules["active"] is False
+        # even though the weekly schedule genuinely runs and pyworxcloud
+        # still computes next_schedule_start (offset-aware string format).
+        device = SimpleNamespace(
+            schedules={
+                "active": False,
+                "next_schedule_start": "2026-07-08 08:00:00+02:00",
+                "slots": [],
+            }
+        )
+        result = HELPERS.next_schedule_start(device, self.now)
+        self.assertEqual(
+            result,
+            datetime(2026, 7, 8, 8, 0, tzinfo=ZoneInfo("Europe/Warsaw")),
+        )
+
+    def test_aware_datetime_library_value_is_accepted(self) -> None:
+        device = SimpleNamespace(
+            schedules={
+                "active": True,
+                "next_schedule_start": datetime(
+                    2026, 7, 6, 10, 0, tzinfo=ZoneInfo("UTC")
+                ),
+                "slots": [],
+            }
+        )
+        result = HELPERS.next_schedule_start(device, self.now)
+        self.assertEqual(
+            result, datetime(2026, 7, 6, 12, 0, tzinfo=self.timezone)
+        )
 
 
 if __name__ == "__main__":

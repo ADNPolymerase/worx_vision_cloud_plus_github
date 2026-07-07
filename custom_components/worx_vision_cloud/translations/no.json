@@ -217,6 +217,9 @@
       "mqtt_registered": {
         "name": "MQTT registrert"
       },
+      "mqtt_connected": {
+        "name": "MQTT tilkoblet"
+      },
       "rain_triggered": {
         "name": "Regn oppdaget"
       },
@@ -277,6 +280,9 @@
       },
       "start_one_time_mowing": {
         "name": "Start engangsklipping"
+      },
+      "restart": {
+        "name": "Start gressklipperen på nytt"
       }
     },
     "number": {

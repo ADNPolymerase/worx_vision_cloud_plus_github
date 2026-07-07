@@ -217,6 +217,9 @@
       "mqtt_registered": {
         "name": "MQTT enregistré"
       },
+      "mqtt_connected": {
+        "name": "MQTT connecté"
+      },
       "rain_triggered": {
         "name": "Pluie détectée"
       },
@@ -277,6 +280,9 @@
       },
       "start_one_time_mowing": {
         "name": "Démarrer la tonte unique"
+      },
+      "restart": {
+        "name": "Redémarrer la tondeuse"
       }
     },
     "number": {

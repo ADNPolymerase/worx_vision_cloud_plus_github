@@ -4,7 +4,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable, Awaitable, Any
 
-from homeassistant.components.button import ButtonEntity, ButtonEntityDescription
+from homeassistant.components.button import (
+    ButtonDeviceClass,
+    ButtonEntity,
+    ButtonEntityDescription,
+)
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
@@ -54,6 +58,11 @@ async def _start_one_time_mowing(coordinator, serial_number: str) -> None:
     await coordinator.async_start_configured_one_time_mowing(serial_number)
 
 
+async def _restart_mower(coordinator, serial_number: str) -> None:
+    """Reboot the mower baseboard, e.g. when it is stuck."""
+    await coordinator.async_restart_mower(serial_number)
+
+
 def _is_online(device) -> bool:
     """Return true when the mower is online and can receive commands."""
     return bool(getattr(device, "online", False))
@@ -93,6 +102,14 @@ BUTTONS: tuple[WorxButtonDescription, ...] = (
         translation_key="start_one_time_mowing",
         icon="mdi:play-circle-outline",
         press_fn=_start_one_time_mowing,
+        available_fn=_is_online,
+    ),
+    WorxButtonDescription(
+        key="restart",
+        translation_key="restart",
+        device_class=ButtonDeviceClass.RESTART,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        press_fn=_restart_mower,
         available_fn=_is_online,
     ),
 )

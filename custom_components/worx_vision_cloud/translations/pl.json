@@ -217,6 +217,9 @@
       "mqtt_registered": {
         "name": "MQTT zarejestrowane"
       },
+      "mqtt_connected": {
+        "name": "MQTT połączony"
+      },
       "rain_triggered": {
         "name": "Czujnik opadów deszczu"
       },
@@ -277,6 +280,9 @@
       },
       "start_one_time_mowing": {
         "name": "Uruchom koszenie jednorazowe"
+      },
+      "restart": {
+        "name": "Uruchom ponownie kosiarkę"
       }
     },
     "number": {

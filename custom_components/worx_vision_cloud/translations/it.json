@@ -217,6 +217,9 @@
       "mqtt_registered": {
         "name": "MQTT registrato"
       },
+      "mqtt_connected": {
+        "name": "MQTT connesso"
+      },
       "rain_triggered": {
         "name": "Pioggia rilevata"
       },
@@ -277,6 +280,9 @@
       },
       "start_one_time_mowing": {
         "name": "Avvia taglio singolo"
+      },
+      "restart": {
+        "name": "Riavvia il tagliaerba"
       }
     },
     "number": {
