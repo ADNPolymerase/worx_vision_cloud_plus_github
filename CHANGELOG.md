@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+## 1.6.1 - 2026-07-07
+
+- Rebranding release, no code changes: the official Landroid Vision logo is
+  now used everywhere (README, HACS, and the Home Assistant UI through the
+  bundled brand/ images served locally since HA 2026.3), with icons at the
+  canonical 256/512 sizes.
+- The integration title shown in the Home Assistant UI is now Worx Landroid
+  Vision PLUS in all 10 languages, new pairings are titled Worx Landroid
+  Vision (account e-mail), and existing entry titles are migrated
+  automatically at startup.
+
 ## 1.6.0 - 2026-07-07
 
 - Renamed the repository to `ADNPolymerase/ha-landroid-vision` and the
