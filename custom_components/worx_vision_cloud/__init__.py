@@ -109,6 +109,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     _async_migrate_entity_registry(hass, coordinator.data, entry)
 
+    # Entries created before the rebranding keep their old pairing title.
+    if entry.title.startswith("Worx Vision Cloud"):
+        hass.config_entries.async_update_entry(
+            entry,
+            title=entry.title.replace(
+                "Worx Vision Cloud", "Worx Landroid Vision", 1
+            ),
+        )
+
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = WorxVisionRuntimeData(
         cloud=cloud,
         coordinator=coordinator,
