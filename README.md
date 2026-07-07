@@ -18,47 +18,15 @@ Custom Home Assistant integration for Worx Landroid Vision / Vision Cloud / RTK 
 
 This integration is built on top of the community `pyworxcloud` library and adds a cleaner Home Assistant entity layer for Vision mowers: mower controls, useful sensors, diagnostics, schedule calendar, RTK map rendering and live-ish robot position tracking.
 
-## Highlights
-
-- Estimated area mowed today sensor, computed locally to work around REST API staleness
-- Estimated daily mowing progress sensor
-- Periodic device refresh for up to date stats
-- Next schedule now uses pyworxcloud's own computed value
-- Schedule day names and calendar events localized to the UI language
-- Last update sensor throttled to once per 24h instead of on every push
-- Primary mower entity follows the Home Assistant naming convention (no redundant name), improving compatibility with third-party cards such as landroid-card
-- Non-deprecated device_tracker imports
-- 8 additional languages: French, German, Dutch, Spanish, Italian, Swedish, Norwegian and Danish, on top of the original English and Polish
-- Party mode switch (previously only exposed as a read-only sensor)
-- ACS, off limits, cutting height and torque controls, gated on pyworxcloud's live per-device capability detection rather than a manual model list, so they only show up when your mower actually reports the matching hardware module
-- Removed duplicate entities that exposed the same value twice as both a switch and a read-only sensor (lock, smart edge cutting, save the hedgehogs, party mode) and a duplicate rain delay sensor next to the existing rain delay number
-- Mower home time and charging time sensors are now disabled by default: for many accounts the Worx API reports them as a permanent 0 (unlike mower work time, which does update), so they're kept as opt-in diagnostics rather than shown by default
-- Daily area/progress and mowing-time tracking persisted in Home Assistant storage at the coordinator level: one shared baseline per mower that survives restarts and entity renames, with proper handling of cloud counter resets, multi-day gaps and mowing across midnight
-- Mowing time today sensor (locally observed, independent of Worx's sporadic work-time statistics) and a Cloud statistics updated diagnostic timestamp
-- Download diagnostics support with automatic redaction of coordinates, addresses and account/device identifiers, so issue reports are safe to attach
-- Home Assistant Repairs integration: actionable alerts in Settings > Repairs when blade cutting time or battery charge cycles exceed the maintenance thresholds, cleared automatically after the matching reset button is pressed
-- Border distance select (50/100/150/200 mm) for Vision mowers; the Worx API is write-only here, so the entity remembers the last value set through Home Assistant
-- Restart mower button (reboots the mower baseboard remotely when it is stuck) and a live MQTT connected diagnostic sensor
-
 ## Features
 
-- Native Home Assistant `lawn_mower` entity.
-- Start, pause and dock commands.
-- One-time mowing controls with runtime, edge cutting and optional RTK zone selection.
-- On-demand edge cutting button.
-- Native firmware `update` entity with OTA install support when Worx exposes it.
-- Rain delay, schedule time-extension, lawn area and lawn perimeter number entities.
-- Switches for firmware auto update, mower lock and native schedule.
-- Battery, status, error and connectivity sensors.
-- Useful maintenance, cloud/MQTT diagnostic and mowing-readiness sensors.
-- Schedule sensor and Home Assistant calendar entity.
-- RTK map camera rendered from the Worx private map API with a recent RTK trail overlay.
-- RTK robot position as a `device_tracker`.
-- Optional RTK address sensor using OpenStreetMap Nominatim reverse geocoding, disabled by default.
-- Switches for Smart edge cutting, Save the hedgehogs and schedule edge procedure.
-- Next mowing time sensor, daily and remaining progress, today and total mowed area, lawn area and mowing efficiency sensors when available from the API.
-- Translations: Polish, English, French, German, Dutch, Spanish, Italian, Swedish, Norwegian and Danish, including localized entity states, schedule and calendar.
-- Optional raw payload entities for debugging, disabled by default.
+- Native `lawn_mower` entity: start, pause, dock, one-time mowing (runtime, edge cutting, RTK zones) and on-demand edge cutting.
+- Mower controls: firmware auto-update, lock, native schedule, smart edge cutting, save the hedgehogs, party mode, and (when your mower reports the matching hardware module) ACS, off limits, cutting height, torque and border distance.
+- Daily area/progress tracking persisted per mower in Home Assistant storage, immune to cloud counter resets and multi-day gaps, plus a locally computed estimate that keeps moving even when Worx's own stats go stale.
+- Schedule sensor and calendar, next mowing time, RTK map camera with mowed-area trail, RTK robot position and reverse-geocoded address (opt-in).
+- Battery, status, error, connectivity, maintenance and mowing-readiness sensors, with Home Assistant Repairs alerts for blade/battery service and a restart button.
+- Download diagnostics with automatic redaction of coordinates, addresses and identifiers.
+- Translated into 10 languages (English, Polish, French, German, Dutch, Spanish, Italian, Swedish, Norwegian, Danish), including entity states, schedule and calendar.
 
 ## Installation With HACS
 
@@ -105,39 +73,21 @@ The exact entity list depends on what your mower reports. Typical entities inclu
 
 See [docs/entities.md](docs/entities.md) for a more detailed list.
 
-## RTK Map
+## RTK Map & Address
 
-For compatible Vision Cloud / RTK mowers the integration tries to read the private Worx map endpoint and renders a Home Assistant camera entity as SVG.
+For compatible Vision Cloud / RTK mowers, a camera entity renders the mowing boundary, excluded areas, station and recent trail as SVG from the private Worx map endpoint — not a video stream, it updates when new data arrives.
 
-The map can include:
+An `RTK address` sensor (disabled by default) can reverse-geocode the mower's rounded position with OpenStreetMap Nominatim, cached 24h. It's opt-in because RTK coordinates can reveal a home or garden location.
 
-- mowing boundary
-- excluded areas
-- markers and station information when available
-- current robot position from RTK payload
-- recent RTK trail kept in memory by Home Assistant
-
-The map is not a video stream. It updates when Home Assistant receives new data from Worx Cloud or when the integration refreshes cached API data.
-
-## RTK Address
-
-The integration includes a disabled-by-default `RTK address` sensor. When enabled, it reverse-geocodes the mower's rounded RTK coordinates with OpenStreetMap Nominatim and caches the result for 24 hours.
-
-Enable this entity only if you accept sending approximate mower coordinates to the reverse-geocoding provider. This is intentionally opt-in because RTK coordinates can reveal a home or garden location. Lookups are rounded, cached and throttled to respect the public Nominatim service.
-
-## Privacy
-
-RTK maps and address lookups can contain precise garden geometry and coordinates. Do not publish debug dumps, Home Assistant storage files, access tokens, serial numbers, raw API responses or screenshots showing exact locations.
-
-Before opening an issue, remove private data from logs and screenshots. See [SECURITY.md](SECURITY.md).
+RTK maps and address lookups can contain precise garden geometry and coordinates — don't publish debug dumps, storage files, tokens or screenshots showing exact locations. See [SECURITY.md](SECURITY.md).
 
 ## Mowed area
 
-The mower reports its mowing figures as covered area (the surface the blades pass over), not unique lawn area. Because a robot mows with overlapping passes, the Today mowed area and Total area mowed sensors can legitimately exceed your lawn size, and Daily progress reaches 100% once the covered area matches the lawn size. Today mowed area is derived from a local-midnight baseline kept in Home Assistant storage per mower, so it survives restarts and entity renames; cloud counter resets and multi-day offline gaps are detected instead of being misattributed to today.
+Mowing figures are covered area (surface the blades pass over), not unique lawn area — overlapping passes mean Today/Total mowed area can legitimately exceed your lawn size, and Daily progress reaches 100% once covered area matches it. The daily baseline is kept in Home Assistant storage per mower, so it survives restarts and entity renames, and correctly handles cloud counter resets and multi-day gaps.
 
 ## Entity naming
 
-The `lawn_mower` entity is the device's primary entity and has no name of its own: its displayed name is exactly the device name (e.g. just "Vision Cloud" instead of "Vision Cloud Mower"). This is both for readability and for compatibility with third-party cards such as [landroid-card](https://github.com/Barma-lej/landroid-card), which strip the device name from every other entity's label using the primary entity's name as the prefix; a redundant word there (like "Mower") previously prevented the prefix from matching.
+The `lawn_mower` entity has no name of its own — it displays exactly the device name (e.g. "Vision Cloud" rather than "Vision Cloud Mower"), for readability and for compatibility with third-party cards such as [landroid-card](https://github.com/Barma-lej/landroid-card) that strip the device name from every other entity's label using this one as the prefix.
 
 ## Limitations
 
