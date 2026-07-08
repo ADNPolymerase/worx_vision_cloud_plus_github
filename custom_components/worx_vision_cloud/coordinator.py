@@ -60,7 +60,12 @@ FIRMWARE_UPGRADE_CACHE_TTL = timedelta(minutes=30)
 STATISTICS_STORAGE_VERSION = 1
 STATISTICS_SAVE_DELAY = 60
 LOCAL_OPTIONS_STORAGE_VERSION = 1
-RTK_TRAIL_MAX_POINTS = 300
+RTK_TRAIL_STORAGE_VERSION = 1
+RTK_TRAIL_SAVE_DELAY = 60
+# A generous per-day safety cap, not a rolling window: the trail is reset at
+# local midnight (see _remember_rtk_position), so this only guards against
+# unbounded growth if positions ever streamed in absurdly often.
+RTK_TRAIL_MAX_POINTS_PER_DAY = 4000
 DEFAULT_ONE_TIME_MOWING_RUNTIME = 60
 DEFAULT_ONE_TIME_MOWING_EDGE_CUT = False
 
@@ -133,6 +138,13 @@ class WorxVisionCoordinator(DataUpdateCoordinator[dict[str, DeviceHandler]]):
         self._rtk_position_trails: dict[
             str, deque[tuple[datetime, float, float]]
         ] = {}
+        self._rtk_trail_day: dict[str, str] = {}
+        self._rtk_trail_store = Store[dict[str, Any]](
+            hass,
+            RTK_TRAIL_STORAGE_VERSION,
+            f"{DOMAIN}.{config_entry.entry_id}.rtk_trail",
+        )
+        self._rtk_trail_save_pending = False
         self._one_time_mowing_options: dict[str, dict[str, Any]] = {}
         self._unsub_periodic_refresh: Callable[[], None] | None = None
 
@@ -148,6 +160,8 @@ class WorxVisionCoordinator(DataUpdateCoordinator[dict[str, DeviceHandler]]):
                 for serial, options in stored_options.items()
                 if isinstance(options, dict)
             }
+
+        await self._load_rtk_trail()
 
         def _on_data_received(name: str, device: DeviceHandler) -> None:
             del name
@@ -175,8 +189,10 @@ class WorxVisionCoordinator(DataUpdateCoordinator[dict[str, DeviceHandler]]):
             self._unsub_periodic_refresh()
             self._unsub_periodic_refresh = None
         self._statistics_save_pending = False
+        self._rtk_trail_save_pending = False
         try:
             await self._statistics_store.async_save(self._statistics.as_dict())
+            await self._rtk_trail_store.async_save(self._rtk_trail_store_data())
         finally:
             await super().async_shutdown()
 
@@ -1075,14 +1091,26 @@ class WorxVisionCoordinator(DataUpdateCoordinator[dict[str, DeviceHandler]]):
     def _remember_rtk_position(
         self, serial_number: str, device: DeviceHandler
     ) -> None:
-        """Keep an in-memory RTK trail for dashboards and the map camera."""
+        """Keep the RTK trail for the current local day.
+
+        Matches the Worx app, which keeps the full day's trail rather than a
+        fixed rolling window: reset at local midnight instead of evicting by
+        point count, and persisted so an HA restart mid-day doesn't lose it.
+        """
         position = rtk_position(device)
         if position is None:
             return
 
+        today = dt_util.now().date().isoformat()
+        if self._rtk_trail_day.get(serial_number) != today:
+            self._rtk_position_trails[serial_number] = deque(
+                maxlen=RTK_TRAIL_MAX_POINTS_PER_DAY
+            )
+            self._rtk_trail_day[serial_number] = today
+
         latitude, longitude = position
         trail = self._rtk_position_trails.setdefault(
-            serial_number, deque(maxlen=RTK_TRAIL_MAX_POINTS)
+            serial_number, deque(maxlen=RTK_TRAIL_MAX_POINTS_PER_DAY)
         )
         if trail:
             _, previous_latitude, previous_longitude = trail[-1]
@@ -1094,6 +1122,60 @@ class WorxVisionCoordinator(DataUpdateCoordinator[dict[str, DeviceHandler]]):
 
         trail.append((datetime.now(UTC), latitude, longitude))
         setattr(device, "_worx_vision_rtk_trail", list(trail))
+        self._schedule_rtk_trail_save()
+
+    def _schedule_rtk_trail_save(self) -> None:
+        """Debounce persisting the RTK trail to storage."""
+        if self._rtk_trail_save_pending:
+            return
+        self._rtk_trail_save_pending = True
+        self._rtk_trail_store.async_delay_save(
+            self._rtk_trail_store_data_and_clear_pending,
+            RTK_TRAIL_SAVE_DELAY,
+        )
+
+    def _rtk_trail_store_data_and_clear_pending(self) -> dict[str, Any]:
+        """Return current RTK trails and allow scheduling the next save."""
+        self._rtk_trail_save_pending = False
+        return self._rtk_trail_store_data()
+
+    def _rtk_trail_store_data(self) -> dict[str, Any]:
+        """Return the RTK trails in a JSON-serializable shape."""
+        return {
+            serial: {
+                "day": self._rtk_trail_day.get(serial),
+                "points": [
+                    {"t": timestamp.isoformat(), "lat": latitude, "lon": longitude}
+                    for timestamp, latitude, longitude in trail
+                ],
+            }
+            for serial, trail in self._rtk_position_trails.items()
+        }
+
+    async def _load_rtk_trail(self) -> None:
+        """Restore today's RTK trail from storage, if any."""
+        stored = await self._rtk_trail_store.async_load()
+        if not isinstance(stored, dict):
+            return
+
+        today = dt_util.now().date().isoformat()
+        for serial, entry in stored.items():
+            if not isinstance(entry, dict) or entry.get("day") != today:
+                continue
+            trail: deque[tuple[datetime, float, float]] = deque(
+                maxlen=RTK_TRAIL_MAX_POINTS_PER_DAY
+            )
+            for point in entry.get("points") or []:
+                try:
+                    timestamp = datetime.fromisoformat(point["t"])
+                    latitude = float(point["lat"])
+                    longitude = float(point["lon"])
+                except (KeyError, TypeError, ValueError):
+                    continue
+                trail.append((timestamp, latitude, longitude))
+            if trail:
+                self._rtk_position_trails[str(serial)] = trail
+                self._rtk_trail_day[str(serial)] = today
 
     def _preserve_enriched_attributes(
         self, serial_number: str, device: DeviceHandler

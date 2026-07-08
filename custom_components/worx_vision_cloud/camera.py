@@ -11,6 +11,7 @@ from homeassistant.components.camera import Camera
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN
 from .entity import WorxVisionEntity
@@ -19,7 +20,6 @@ from .helpers import get_dict_value, get_nested_value, rtk_map_id, rtk_position
 SVG_WIDTH = 900
 SVG_HEIGHT = 620
 SVG_PADDING = 48
-TRAIL_MAX_AGE = timedelta(hours=6)
 TRAIL_MAX_GAP = timedelta(minutes=5)
 TRAIL_MAX_SEGMENT_DISTANCE_M = 35.0
 TRAIL_MIN_POINT_DISTANCE_M = 0.25
@@ -405,11 +405,18 @@ def _trail_segments(
     map_data: dict[str, Any],
     trail: list[tuple[datetime, float, float]] | None,
 ) -> list[list[tuple[datetime, float, float]]]:
-    """Return drawable RTK trail segments without long gaps or position jumps."""
+    """Return drawable RTK trail segments without long gaps or position jumps.
+
+    Kept for the current local day (matching the Worx app, which shows the
+    full day's trail rather than a fixed rolling window), not a fixed age
+    cutoff — the coordinator itself drops yesterday's points at local
+    midnight, so this only needs to guard against a stale point landing here
+    right at the day boundary.
+    """
     if not trail:
         return []
 
-    now = datetime.now(UTC)
+    today = dt_util.now().date()
     bounds = _coordinate_bounds(_iter_bounds_points(map_data, None))
     segments: list[list[tuple[datetime, float, float]]] = []
     current: list[tuple[datetime, float, float]] = []
@@ -424,7 +431,7 @@ def _trail_segments(
     for timestamp, latitude, longitude in trail:
         point = (latitude, longitude)
 
-        if now - timestamp > TRAIL_MAX_AGE:
+        if dt_util.as_local(timestamp).date() != today:
             continue
 
         if bounds is not None and not _point_in_bounds(point, bounds, TRAIL_MAP_MARGIN_M):

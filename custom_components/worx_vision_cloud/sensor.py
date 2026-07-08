@@ -517,7 +517,7 @@ def _rtk_trail_attributes(device) -> dict[str, Any]:
             }
             for time, latitude, longitude in recent
         ],
-        "max_cached_points": 300,
+        "resets_at_local_midnight": True,
     }
 
 
