@@ -10,7 +10,10 @@ from homeassistant.components.lawn_mower import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+
+from pyworxcloud.exceptions import OfflineError
 
 from .const import DOMAIN
 from .entity import WorxVisionEntity
@@ -92,8 +95,17 @@ class WorxVisionLawnMower(WorxVisionEntity, LawnMowerEntity):
 
     @property
     def available(self) -> bool:
-        """Mower commands require the device to be online."""
-        return super().available and bool(getattr(self.device, "online", False))
+        """Return entity availability.
+
+        Deliberately NOT gated on the mower's own `online` flag: this is the
+        device's primary entity, and third-party cards such as landroid-card
+        hide their entire body (falling back to a bare "not available"
+        placeholder) the moment it goes unavailable. A connectivity blip
+        should keep showing the last known status/activity, not blank the
+        whole card. `online` is still exposed as a state attribute, and
+        actions correctly fail with a clear error while offline (see below).
+        """
+        return super().available
 
     @property
     def activity(self) -> LawnMowerActivity | None:
@@ -153,15 +165,30 @@ class WorxVisionLawnMower(WorxVisionEntity, LawnMowerEntity):
 
     async def async_start_mowing(self) -> None:
         """Start or resume mowing."""
-        await self.coordinator.cloud.start(self._serial_number)
+        try:
+            await self.coordinator.cloud.start(self._serial_number)
+        except OfflineError as err:
+            raise HomeAssistantError(
+                "The mower is currently offline, no command was sent"
+            ) from err
         await self.coordinator.async_request_device_update(self._serial_number)
 
     async def async_pause(self) -> None:
         """Pause mowing."""
-        await self.coordinator.cloud.pause(self._serial_number)
+        try:
+            await self.coordinator.cloud.pause(self._serial_number)
+        except OfflineError as err:
+            raise HomeAssistantError(
+                "The mower is currently offline, no command was sent"
+            ) from err
         await self.coordinator.async_request_device_update(self._serial_number)
 
     async def async_dock(self) -> None:
         """Return mower to dock."""
-        await self.coordinator.cloud.home(self._serial_number)
+        try:
+            await self.coordinator.cloud.home(self._serial_number)
+        except OfflineError as err:
+            raise HomeAssistantError(
+                "The mower is currently offline, no command was sent"
+            ) from err
         await self.coordinator.async_request_device_update(self._serial_number)

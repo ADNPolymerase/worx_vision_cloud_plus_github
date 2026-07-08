@@ -4,6 +4,7 @@
 
 ## 1.6.2 - 2026-07-08
 
+- Fixed the primary lawn_mower entity (and third-party cards built on it, such as landroid-card) going fully unavailable/blank whenever the mower lost wifi. Availability no longer depends on the mower's own online flag, so the last known status/activity keeps showing during a connectivity blip instead of the whole card collapsing to a bare "not available" placeholder. `online` stays available as a state attribute, and start/pause/dock commands sent while offline now fail with a clear error instead of being silently blocked by Home Assistant.
 - Fixed the RTK map camera going unavailable, and the lawn area, daily
   progress, remaining progress and estimated daily progress sensors going
   unknown, whenever Worx sent a partial MQTT config update that momentarily
