@@ -29,6 +29,10 @@ MOWED_SWATH_MIN_WIDTH_PX = 3.0
 MOWED_SWATH_MAX_WIDTH_PX = 32.0
 MOWED_MAX_OPACITY = 0.58
 MOWED_MIN_OPACITY = 0.12
+# Purely a visual fade duration for freshly-mowed swaths (older swaths look
+# lighter), unrelated to how long trail data is kept (that's a full local
+# day, reset at midnight - see coordinator.py/_remember_rtk_position).
+MOWED_FADE_DURATION = timedelta(hours=6)
 CUTTING_WIDTH_BY_MODEL_M = {
     "WR202E": 0.18,
     "WR206E": 0.18,
@@ -461,7 +465,7 @@ def _trail_segments(
 def _mowed_opacity(timestamp: datetime, now: datetime) -> float:
     """Return fading opacity for a recently mowed RTK segment."""
     age = max(now - timestamp, timedelta())
-    fade = min(age / TRAIL_MAX_AGE, 1)
+    fade = min(age / MOWED_FADE_DURATION, 1)
     return MOWED_MAX_OPACITY - (MOWED_MAX_OPACITY - MOWED_MIN_OPACITY) * fade
 
 
