@@ -1113,6 +1113,37 @@ class WorxVisionCoordinator(DataUpdateCoordinator[dict[str, DeviceHandler]]):
                 continue
             setattr(device, attr, getattr(previous, attr))
 
+        self._preserve_raw_cfg_rtk(previous, device)
+
+    def _preserve_raw_cfg_rtk(
+        self, previous: DeviceHandler, device: DeviceHandler
+    ) -> None:
+        """Keep the last known RTK map id/zones across partial MQTT cfg pushes.
+
+        pyworxcloud rebuilds `raw_cfg` from whatever "cfg" payload triggered
+        the latest push, and Worx sometimes sends partial cfg diffs that omit
+        the "rtk" block entirely. Without this, the RTK map id would flicker
+        to None (and downstream: the map camera, lawn area fallback and daily
+        progress sensors that depend on it would flicker to unknown) even
+        though nothing actually changed on the mower.
+        """
+        previous_cfg = getattr(previous, "raw_cfg", None)
+        new_cfg = getattr(device, "raw_cfg", None)
+        if not isinstance(previous_cfg, dict) or not isinstance(new_cfg, dict):
+            return
+
+        previous_rtk = previous_cfg.get("rtk")
+        if not isinstance(previous_rtk, dict):
+            return
+
+        new_rtk = new_cfg.get("rtk")
+        if isinstance(new_rtk, dict):
+            merged = dict(previous_rtk)
+            merged.update(new_rtk)
+            new_cfg["rtk"] = merged
+        else:
+            new_cfg["rtk"] = dict(previous_rtk)
+
     def _update_daily_statistics(
         self, serial_number: str, device: DeviceHandler
     ) -> None:

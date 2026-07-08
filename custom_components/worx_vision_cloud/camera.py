@@ -120,9 +120,19 @@ class WorxVisionMapCamera(WorxVisionEntity, Camera):
         """Return an SVG map rendered from Worx map geometry."""
         del width, height
 
-        map_data = await self.coordinator.async_get_rtk_map(str(rtk_map_id(self.device)))
+        map_id = rtk_map_id(self.device)
+        map_data = (
+            await self.coordinator.async_get_rtk_map(str(map_id))
+            if map_id is not None
+            else None
+        )
         if map_data is not None:
             self._last_map_data = map_data
+        else:
+            # A momentary fetch failure (or a partial MQTT cfg push that
+            # briefly omits the RTK map id) should keep showing the last
+            # known map instead of rendering a blank/unknown one.
+            map_data = self._last_map_data
 
         trail = self.coordinator.rtk_position_timed_trail(self._serial_number)
         svg, swath_width_px = _render_svg_map(

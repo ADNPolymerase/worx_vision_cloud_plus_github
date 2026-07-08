@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+## 1.6.2 - 2026-07-08
+
+- Fixed the RTK map camera going unavailable, and the lawn area, daily
+  progress, remaining progress and estimated daily progress sensors going
+  unknown, whenever Worx sent a partial MQTT config update that momentarily
+  omitted the RTK block. The coordinator now preserves the last known RTK
+  map id and zones across such partial updates instead of losing them, the
+  same way it already preserved REST-derived data.
+- Fixed the map camera rendering a blank image on a fetch failure instead
+  of keeping the last successfully rendered map.
+- Fixed a related bug where a missing RTK map id was converted to the
+  literal string "None" before being sent to the coordinator, which passed
+  validation and fired a needless request against the private Worx map API
+  (visible in logs as repeated 404s).
+
 ## 1.6.1 - 2026-07-07
 
 - Rebranding release, no code changes: the official Landroid Vision logo is
