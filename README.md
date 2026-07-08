@@ -75,7 +75,7 @@ See [docs/entities.md](docs/entities.md) for a more detailed list.
 
 ## RTK Map & Address
 
-For compatible Vision Cloud / RTK mowers, a camera entity renders the mowing boundary, excluded areas, station and recent trail as SVG from the private Worx map endpoint — not a video stream, it updates when new data arrives.
+For compatible Vision Cloud / RTK mowers, a camera entity renders the mowing boundary, excluded areas, station and the current day's mowing trail as SVG from the private Worx map endpoint — not a video stream, it updates when new data arrives. The trail covers the full local day (like the Worx app) rather than a fixed time window: it resets at local midnight, is persisted so a Home Assistant restart mid-day doesn't lose it, and keeps showing the last known map if a fetch briefly fails.
 
 An `RTK address` sensor (disabled by default) can reverse-geocode the mower's rounded position with OpenStreetMap Nominatim, cached 24h. It's opt-in because RTK coordinates can reveal a home or garden location.
 
@@ -88,6 +88,8 @@ Mowing figures are covered area (surface the blades pass over), not unique lawn 
 ## Entity naming
 
 The `lawn_mower` entity has no name of its own — it displays exactly the device name (e.g. "Vision Cloud" rather than "Vision Cloud Mower"), for readability and for compatibility with third-party cards such as [landroid-card](https://github.com/Barma-lej/landroid-card) that strip the device name from every other entity's label using this one as the prefix.
+
+As the device's primary entity, its availability doesn't depend on the mower's own online status: a wifi/cloud connectivity blip keeps showing the last known status and attributes instead of going unavailable (which would otherwise blank cards like landroid-card that hide their body when their main entity is unavailable). Only commands (start/pause/dock) are blocked while genuinely offline, with a clear error.
 
 ## Limitations
 
