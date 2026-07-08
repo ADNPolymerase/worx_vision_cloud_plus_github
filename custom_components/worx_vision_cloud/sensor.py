@@ -973,7 +973,6 @@ async def async_setup_entry(
         entities.append(WorxMowingTimeTodaySensor(coordinator, entry, serial_number))
         entities.append(WorxDailyProgressSensor(coordinator, entry, serial_number))
         entities.append(WorxRemainingProgressSensor(coordinator, entry, serial_number))
-        entities.append(WorxMowingTimeTodaySensor(coordinator, entry, serial_number))
         entities.append(WorxEstimatedAreaTodaySensor(coordinator, entry, serial_number))
         entities.append(WorxEstimatedDailyProgressSensor(coordinator, entry, serial_number))
 

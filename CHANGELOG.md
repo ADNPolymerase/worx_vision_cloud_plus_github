@@ -4,6 +4,7 @@
 
 ## 1.6.2 - 2026-07-08
 
+- Fixed WorxMowingTimeTodaySensor being registered twice in async_setup_entry, which logged "Platform worx_vision_cloud does not generate unique IDs" and silently dropped the duplicate at startup.
 - The RTK trail shown on the map camera now covers the full local day like the Worx app, instead of a fixed 6-hour window capped at 300 in-memory points: it resets at local midnight instead, is persisted so a Home Assistant restart mid-day doesn't lose the morning's trail, and a generous per-day point cap replaces the old rolling window so a long mowing day no longer silently evicts its own earlier segments.
 - Fixed the primary lawn_mower entity (and third-party cards built on it, such as landroid-card) going fully unavailable/blank whenever the mower lost wifi. Availability no longer depends on the mower's own online flag, so the last known status/activity keeps showing during a connectivity blip instead of the whole card collapsing to a bare "not available" placeholder. `online` stays available as a state attribute, and start/pause/dock commands sent while offline now fail with a clear error instead of being silently blocked by Home Assistant.
 - Fixed the RTK map camera going unavailable, and the lawn area, daily
