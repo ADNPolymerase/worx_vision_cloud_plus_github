@@ -40,6 +40,7 @@ from .helpers import (
     STARTING_STATUS_IDS,
     device_display_name,
     get_dict_value,
+    rtk_map_id,
     rtk_position,
 )
 from .statistics import DailyStatisticsTracker
@@ -145,6 +146,11 @@ class WorxVisionCoordinator(DataUpdateCoordinator[dict[str, DeviceHandler]]):
             f"{DOMAIN}.{config_entry.entry_id}.rtk_trail",
         )
         self._rtk_trail_save_pending = False
+        # Independent last-known-good cache, decoupled from pyworxcloud's
+        # DeviceHandler (which it mutates in place, so it never holds a
+        # true "previous" snapshot to preserve from - see
+        # _remember_rtk_map_id).
+        self._rtk_map_ids: dict[str, str] = {}
         self._one_time_mowing_options: dict[str, dict[str, Any]] = {}
         self._unsub_periodic_refresh: Callable[[], None] | None = None
 
@@ -224,6 +230,7 @@ class WorxVisionCoordinator(DataUpdateCoordinator[dict[str, DeviceHandler]]):
 
         async with self._event_lock:
             self._preserve_enriched_attributes(str(serial), device)
+            self._remember_rtk_map_id(str(serial), device)
             self._remember_rtk_position(str(serial), device)
             self._update_daily_statistics(str(serial), device)
             self._sync_repair_issues(str(serial), device)
@@ -1021,7 +1028,7 @@ class WorxVisionCoordinator(DataUpdateCoordinator[dict[str, DeviceHandler]]):
         if firmware_info is not None:
             setattr(device, "_worx_vision_firmware_upgrade", firmware_info)
 
-        map_id = self._device_rtk_map_id(device)
+        map_id = self._remember_rtk_map_id(serial_number, device)
         map_data = await self.async_get_rtk_map(map_id)
         if map_data is not None:
             setattr(device, "_worx_vision_rtk_map", map_data)
@@ -1055,17 +1062,23 @@ class WorxVisionCoordinator(DataUpdateCoordinator[dict[str, DeviceHandler]]):
             _LOGGER.debug("Could not fetch Worx API path %s", path, exc_info=True)
             return None
 
-    @staticmethod
-    def _device_rtk_map_id(device: DeviceHandler) -> str | None:
-        """Return RTK map id directly from a pyworxcloud device payload."""
-        cfg = getattr(device, "raw_cfg", {}) or {}
-        if not isinstance(cfg, dict):
-            return None
-        rtk = cfg.get("rtk") or {}
-        if not isinstance(rtk, dict):
-            return None
-        value = rtk.get("map")
-        return None if value is None else str(value)
+    def _remember_rtk_map_id(
+        self, serial_number: str, device: DeviceHandler
+    ) -> str | None:
+        """Return the RTK map id, caching the last known value independently.
+
+        pyworxcloud reuses and mutates a single DeviceHandler instance per
+        mower in place, so `raw_cfg` on that object is the SAME dict before
+        and after a push: there is no "previous" snapshot to compare against
+        once pyworxcloud has already overwritten it with a partial cfg that
+        omits the rtk block. The only reliable fix is a cache that lives
+        outside that object entirely, updated whenever a real value is seen
+        and used as a fallback whenever it briefly isn't.
+        """
+        live_value = rtk_map_id(device)
+        if live_value is not None:
+            self._rtk_map_ids[serial_number] = str(live_value)
+        return self._rtk_map_ids.get(serial_number)
 
     @staticmethod
     def _fallback_firmware_upgrade_info(
@@ -1195,36 +1208,15 @@ class WorxVisionCoordinator(DataUpdateCoordinator[dict[str, DeviceHandler]]):
                 continue
             setattr(device, attr, getattr(previous, attr))
 
-        self._preserve_raw_cfg_rtk(previous, device)
+    def rtk_map_id(self, serial_number: str) -> str | None:
+        """Return the last known RTK map id for a mower.
 
-    def _preserve_raw_cfg_rtk(
-        self, previous: DeviceHandler, device: DeviceHandler
-    ) -> None:
-        """Keep the last known RTK map id/zones across partial MQTT cfg pushes.
-
-        pyworxcloud rebuilds `raw_cfg` from whatever "cfg" payload triggered
-        the latest push, and Worx sometimes sends partial cfg diffs that omit
-        the "rtk" block entirely. Without this, the RTK map id would flicker
-        to None (and downstream: the map camera, lawn area fallback and daily
-        progress sensors that depend on it would flicker to unknown) even
-        though nothing actually changed on the mower.
+        Backed by an independent cache (see _remember_rtk_map_id) rather
+        than reading pyworxcloud's live device object directly, so a
+        momentary partial cfg push that omits the rtk block doesn't make
+        the map camera or dependent sensors flicker unavailable/unknown.
         """
-        previous_cfg = getattr(previous, "raw_cfg", None)
-        new_cfg = getattr(device, "raw_cfg", None)
-        if not isinstance(previous_cfg, dict) or not isinstance(new_cfg, dict):
-            return
-
-        previous_rtk = previous_cfg.get("rtk")
-        if not isinstance(previous_rtk, dict):
-            return
-
-        new_rtk = new_cfg.get("rtk")
-        if isinstance(new_rtk, dict):
-            merged = dict(previous_rtk)
-            merged.update(new_rtk)
-            new_cfg["rtk"] = merged
-        else:
-            new_cfg["rtk"] = dict(previous_rtk)
+        return self._rtk_map_ids.get(serial_number)
 
     def _update_daily_statistics(
         self, serial_number: str, device: DeviceHandler

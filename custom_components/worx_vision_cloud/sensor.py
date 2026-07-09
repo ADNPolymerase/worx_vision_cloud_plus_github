@@ -48,7 +48,6 @@ from .helpers import (
     rtk_at_station,
     rtk_distance_to_station_m,
     rtk_map_attributes,
-    rtk_map_id,
     rtk_position,
     schedule_attributes,
     schedule_summary,
@@ -764,14 +763,6 @@ STANDARD_SENSORS: tuple[WorxSensorDescription, ...] = (
         value_fn=_cloud_statistics_updated,
     ),
     WorxSensorDescription(
-        key="rtk_map",
-        translation_key="rtk_map",
-        icon="mdi:map-outline",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=rtk_map_id,
-        attrs_fn=rtk_map_attributes,
-    ),
-    WorxSensorDescription(
         key="rtk_trail_points",
         translation_key="rtk_trail_points",
         icon="mdi:map-marker-path",
@@ -968,6 +959,7 @@ async def async_setup_entry(
         entities.append(WorxVisionAddressSensor(coordinator, entry, serial_number))
         entities.append(WorxScheduleSensor(coordinator, entry, serial_number))
         entities.append(WorxNextScheduleSensor(coordinator, entry, serial_number))
+        entities.append(WorxRtkMapSensor(coordinator, entry, serial_number))
         entities.append(WorxLastUpdateSensor(coordinator, entry, serial_number))
         entities.append(WorxAreaMowedTodaySensor(coordinator, entry, serial_number))
         entities.append(WorxMowingTimeTodaySensor(coordinator, entry, serial_number))
@@ -1053,6 +1045,37 @@ class WorxNextScheduleSensor(WorxVisionEntity, SensorEntity):
     def native_value(self) -> datetime | None:
         """Return the next scheduled mowing start."""
         return next_schedule_start(self.device, dt_util.now())
+
+
+class WorxRtkMapSensor(WorxVisionEntity, SensorEntity):
+    """RTK map id, from the coordinator's cache rather than the live device.
+
+    A partial MQTT cfg push from Worx can momentarily omit the rtk block on
+    the live device object, and pyworxcloud mutates that object in place
+    (no real "previous" snapshot survives at the object level to fall back
+    to). The coordinator keeps its own independent last-known-value cache
+    for exactly this reason, so this sensor uses that instead of reading
+    raw_cfg directly.
+    """
+
+    _attr_translation_key = "rtk_map"
+    _attr_icon = "mdi:map-outline"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, coordinator, entry, serial_number: str) -> None:
+        """Initialize the RTK map sensor."""
+        super().__init__(coordinator, entry, serial_number, "rtk_map")
+
+    @property
+    def native_value(self) -> str | None:
+        """Return the cached RTK map id."""
+        return self.coordinator.rtk_map_id(self._serial_number)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return RTK map metadata best-effort from the live device."""
+        attrs = rtk_map_attributes(self.device)
+        return {key: value for key, value in attrs.items() if value is not None}
 
 
 LAST_UPDATE_REPORT_INTERVAL = timedelta(hours=24)

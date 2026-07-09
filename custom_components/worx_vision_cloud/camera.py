@@ -15,7 +15,7 @@ from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN
 from .entity import WorxVisionEntity
-from .helpers import get_dict_value, get_nested_value, rtk_map_id, rtk_position
+from .helpers import get_dict_value, get_nested_value, rtk_position
 
 SVG_WIDTH = 900
 SVG_HEIGHT = 620
@@ -92,7 +92,10 @@ class WorxVisionMapCamera(WorxVisionEntity, Camera):
     @property
     def available(self) -> bool:
         """Return entity availability."""
-        return super().available and rtk_map_id(self.device) is not None
+        return (
+            super().available
+            and self.coordinator.rtk_map_id(self._serial_number) is not None
+        )
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
@@ -103,7 +106,7 @@ class WorxVisionMapCamera(WorxVisionEntity, Camera):
         marker_count = len(get_nested_value(map_data, "layers", "markers", default=[]) or [])
 
         attrs: dict[str, Any] = {
-            "map_id": rtk_map_id(self.device),
+            "map_id": self.coordinator.rtk_map_id(self._serial_number),
             "map_status": get_dict_value(map_data, "status"),
             "map_type": get_dict_value(map_data, "type"),
             "active": get_dict_value(map_data, "active"),
@@ -124,7 +127,7 @@ class WorxVisionMapCamera(WorxVisionEntity, Camera):
         """Return an SVG map rendered from Worx map geometry."""
         del width, height
 
-        map_id = rtk_map_id(self.device)
+        map_id = self.coordinator.rtk_map_id(self._serial_number)
         map_data = (
             await self.coordinator.async_get_rtk_map(str(map_id))
             if map_id is not None

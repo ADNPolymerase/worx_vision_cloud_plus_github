@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- Fixed the RTK map camera and sensor going unavailable/unknown again after
+  several hours, even without any restart. The 1.6.2 fix compared the
+  coordinator's "previous" device object against the newly pushed one to
+  restore a missing rtk block, but pyworxcloud reuses and mutates a single
+  DeviceHandler instance per mower in place, so those two references were
+  actually the same object: there was never a real "before" snapshot to
+  restore from once pyworxcloud itself had already overwritten the rtk
+  block with a partial cfg push. Replaced with an independent last-known-id
+  cache on the coordinator, decoupled entirely from pyworxcloud's own
+  object graph, used by both the camera and the RTK map sensor.
+
 ## 1.6.2 - 2026-07-08
 
 - Fixed WorxMowingTimeTodaySensor being registered twice in async_setup_entry, which logged "Platform worx_vision_cloud does not generate unique IDs" and silently dropped the duplicate at startup.
