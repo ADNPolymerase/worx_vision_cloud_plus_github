@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Added a set_rtk_map_id service to manually seed or correct the cached RTK map id when Worx doesn't resend it promptly (observed live: it can go quiet for a long stretch, even during active mowing with a good GPS fix). The last known value can be recovered from the RTK map sensor's own state history and set through this service to unblock the map camera and the lawn-area-dependent sensors immediately, without waiting for Worx's cloud to cooperate.
 - Persisted the RTK map id cache to Home Assistant storage, so the map camera and RTK map sensor no longer need to wait for the mower to send a fresh cfg payload with the rtk block after a restart (observed: docked/idle mowers can go a while without one, only sending it again once mowing resumes). The stored value is a single short string per mower and only gets written when it actually changes, so this stays tiny over time rather than accumulating.
 - Added Russian translation.
 - Fixed the RTK map camera and sensor going unavailable/unknown again after

@@ -1256,6 +1256,25 @@ class WorxVisionCoordinator(DataUpdateCoordinator[dict[str, DeviceHandler]]):
         """
         return self._rtk_map_ids.get(serial_number)
 
+    async def async_set_rtk_map_id(self, serial_number: str, map_id: str) -> None:
+        """Manually seed or correct the cached RTK map id for a mower.
+
+        Worx doesn't always resend `cfg.rtk.map` promptly (observed live:
+        it can go quiet for a long stretch even during active mowing with a
+        good GPS fix, apparently tied to a server-side trigger this
+        integration has no visibility into). When that happens, the map id
+        can still be recovered from Home Assistant's own state history
+        (this sensor's past values) and set here to unblock the map camera
+        and lawn-area-dependent sensors immediately, without waiting for
+        Worx's cloud to cooperate. Persisted the same way as a live value.
+        """
+        value = str(map_id).strip()
+        if not value:
+            raise HomeAssistantError("map_id must not be empty")
+        self._rtk_map_ids[serial_number] = value
+        await self._rtk_map_id_store.async_save(dict(self._rtk_map_ids))
+        await self.async_request_refresh()
+
     def _update_daily_statistics(
         self, serial_number: str, device: DeviceHandler
     ) -> None:

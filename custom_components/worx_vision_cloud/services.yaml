@@ -37,3 +37,21 @@ start_one_time_mowing:
         - 2
       selector:
         object:
+
+set_rtk_map_id:
+  name: Ustaw identyfikator mapy RTK
+  description: Recznie ustawia identyfikator mapy RTK w pamieci podrecznej, gdy Worx go nie wysyla. Znajdz ostatnia znana wartosc w historii encji "Mapa RTK" i wklej ja tutaj, aby natychmiast odblokowac kamere mapy i zalezne czujniki powierzchni/postepu bez czekania na chmure Worx.
+  fields:
+    entity_id:
+      name: Kosiarka
+      description: Encja kosiarki Worx Vision Cloud PLUS.
+      required: true
+      selector:
+        entity:
+          domain: lawn_mower
+    map_id:
+      name: Identyfikator mapy
+      description: Znany identyfikator mapy RTK (UUID), np. z historii encji "Mapa RTK".
+      required: true
+      selector:
+        text:

@@ -32,6 +32,7 @@ from pyworxcloud.exceptions import AuthorizationError, TooManyRequestsError
 
 from .const import (
     ATTR_EDGE_CUT,
+    ATTR_MAP_ID,
     ATTR_RUNTIME,
     ATTR_ZONES,
     CONF_CLOUD,
@@ -42,6 +43,7 @@ from .const import (
     DEFAULT_VERIFY_SSL,
     DOMAIN,
     PLATFORMS,
+    SERVICE_SET_RTK_MAP_ID,
     SERVICE_START_ONE_TIME_MOWING,
 )
 from .coordinator import WorxVisionCoordinator
@@ -56,6 +58,13 @@ START_ONE_TIME_MOWING_SCHEMA = vol.Schema(
         ),
         vol.Optional(ATTR_EDGE_CUT, default=False): cv.boolean,
         vol.Optional(ATTR_ZONES, default=[]): lambda value: _service_zone_ids(value),
+    }
+)
+
+SET_RTK_MAP_ID_SCHEMA = vol.Schema(
+    {
+        vol.Required(ATTR_ENTITY_ID): cv.entity_id,
+        vol.Required(ATTR_MAP_ID): cv.string,
     }
 )
 
@@ -152,6 +161,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if not hass.data.get(DOMAIN):
         if hass.services.has_service(DOMAIN, SERVICE_START_ONE_TIME_MOWING):
             hass.services.async_remove(DOMAIN, SERVICE_START_ONE_TIME_MOWING)
+        if hass.services.has_service(DOMAIN, SERVICE_SET_RTK_MAP_ID):
+            hass.services.async_remove(DOMAIN, SERVICE_SET_RTK_MAP_ID)
         hass.data.pop(DOMAIN, None)
 
     return unload_ok
@@ -183,42 +194,44 @@ def _service_zone_ids(value: Any) -> list[int]:
     return zone_ids
 
 
+def _resolve_mower_runtime(
+    hass: HomeAssistant, entity_id: str
+) -> tuple[str, "WorxVisionRuntimeData"]:
+    """Return (serial_number, runtime_data) for a lawn_mower entity_id."""
+    entity_entry = er.async_get(hass).async_get(entity_id)
+    if (
+        entity_entry is None
+        or entity_entry.platform != DOMAIN
+        or not entity_entry.unique_id.endswith("_mower")
+    ):
+        raise HomeAssistantError("Select a Worx Vision Cloud PLUS lawn_mower entity")
+
+    serial_number = entity_entry.unique_id.removesuffix("_mower")
+    runtime_data = hass.data.get(DOMAIN, {}).get(entity_entry.config_entry_id)
+    if runtime_data is None or serial_number not in runtime_data.coordinator.data:
+        runtime_data = next(
+            (
+                data
+                for data in hass.data.get(DOMAIN, {}).values()
+                if serial_number in data.coordinator.data
+            ),
+            None,
+        )
+    if runtime_data is None:
+        raise HomeAssistantError("Could not find runtime data for the selected Worx mower")
+
+    return serial_number, runtime_data
+
+
 def _async_setup_services(hass: HomeAssistant) -> None:
     """Register integration-level services."""
     if hass.services.has_service(DOMAIN, SERVICE_START_ONE_TIME_MOWING):
         return
 
     async def async_start_one_time_mowing(call) -> None:
-        entity_id = call.data[ATTR_ENTITY_ID]
-        entity_entry = er.async_get(hass).async_get(entity_id)
-        if (
-            entity_entry is None
-            or entity_entry.platform != DOMAIN
-            or not entity_entry.unique_id.endswith("_mower")
-        ):
-            raise HomeAssistantError(
-                "Select a Worx Vision Cloud PLUS lawn_mower entity"
-            )
-
-        serial_number = entity_entry.unique_id.removesuffix("_mower")
-        runtime_data = hass.data.get(DOMAIN, {}).get(entity_entry.config_entry_id)
-        if (
-            runtime_data is None
-            or serial_number not in runtime_data.coordinator.data
-        ):
-            runtime_data = next(
-                (
-                    data
-                    for data in hass.data.get(DOMAIN, {}).values()
-                    if serial_number in data.coordinator.data
-                ),
-                None,
-            )
-        if runtime_data is None:
-            raise HomeAssistantError(
-                "Could not find runtime data for the selected Worx mower"
-            )
-
+        serial_number, runtime_data = _resolve_mower_runtime(
+            hass, call.data[ATTR_ENTITY_ID]
+        )
         await runtime_data.coordinator.async_start_one_time_mowing(
             serial_number,
             call.data[ATTR_RUNTIME],
@@ -226,11 +239,25 @@ def _async_setup_services(hass: HomeAssistant) -> None:
             call.data[ATTR_ZONES],
         )
 
+    async def async_set_rtk_map_id(call) -> None:
+        serial_number, runtime_data = _resolve_mower_runtime(
+            hass, call.data[ATTR_ENTITY_ID]
+        )
+        await runtime_data.coordinator.async_set_rtk_map_id(
+            serial_number, call.data[ATTR_MAP_ID]
+        )
+
     hass.services.async_register(
         DOMAIN,
         SERVICE_START_ONE_TIME_MOWING,
         async_start_one_time_mowing,
         schema=START_ONE_TIME_MOWING_SCHEMA,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_SET_RTK_MAP_ID,
+        async_set_rtk_map_id,
+        schema=SET_RTK_MAP_ID_SCHEMA,
     )
 
 
