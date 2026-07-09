@@ -1,0 +1,208 @@
+{
+  "title": "Worx Landroid Vision PLUS",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Worx Vision Cloud PLUS",
+        "description": "Используйте те же данные для входа, что и в приложении Worx Landroid.",
+        "data": {
+          "email": "Email",
+          "password": "Пароль",
+          "cloud": "Облако",
+          "verify_ssl": "Проверять SSL",
+          "expose_raw_entities": "Отображать все сырые поля как отдельные сущности"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Не удалось подключиться к Worx Cloud.",
+      "invalid_auth": "Неверный логин или пароль.",
+      "rate_limited": "Превышен лимит запросов Worx Cloud. Повторите попытку позже."
+    },
+    "abort": {
+      "already_configured": "Эта учётная запись уже настроена."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery_percent": { "name": "Заряд батареи" },
+      "status": {
+        "name": "Статус",
+        "state": {
+          "home": "На базе",
+          "leaving_home": "Выезд с базы",
+          "going_home": "Возврат на базу",
+          "mowing": "Стрижка газона",
+          "edge_cutting": "Стрижка кромки",
+          "charging": "Зарядка",
+          "paused": "На паузе",
+          "idle": "Ожидание",
+          "manual_stop": "Ручная остановка",
+          "rain_delay": "Задержка из-за дождя",
+          "locked": "Заблокирован",
+          "error": "Ошибка",
+          "no_error": "Нет ошибок",
+          "offline": "Не в сети"
+        }
+      },
+      "error": {
+        "name": "Ошибка",
+        "state": {
+          "home": "На базе",
+          "leaving_home": "Выезд с базы",
+          "going_home": "Возврат на базу",
+          "mowing": "Стрижка газона",
+          "edge_cutting": "Стрижка кромки",
+          "charging": "Зарядка",
+          "paused": "На паузе",
+          "idle": "Ожидание",
+          "manual_stop": "Ручная остановка",
+          "rain_delay": "Задержка из-за дождя",
+          "locked": "Заблокирован",
+          "error": "Ошибка",
+          "no_error": "Нет ошибок",
+          "offline": "Не в сети"
+        }
+      },
+      "rssi": { "name": "RSSI" },
+      "zone_current": { "name": "Текущая зона" },
+      "schedule": { "name": "Расписание" },
+      "mowing_readiness": {
+        "name": "Готовность к стрижке",
+        "state": {
+          "ready": "Готов",
+          "mowing": "Стрижка",
+          "charging": "Зарядка",
+          "battery_low": "Низкий заряд батареи",
+          "rain_delay": "Задержка из-за дождя",
+          "error": "Ошибка",
+          "locked": "Заблокирован",
+          "offline": "Не в сети"
+        }
+      },
+      "cloud_connection": {
+        "name": "Соединение с облаком",
+        "state": {
+          "ok": "Подключено",
+          "check": "Проверка",
+          "offline": "Не в сети"
+        }
+      },
+      "api_capabilities": { "name": "Возможности API" },
+      "push_notifications": { "name": "Push-уведомления" },
+      "daily_progress": { "name": "Прогресс за день" },
+      "remaining_progress": { "name": "Осталось скосить" },
+      "area_mowed_today": { "name": "Площадь, скошенная сегодня" },
+      "next_schedule": { "name": "Следующее расписание" },
+      "area_mowed_total": { "name": "Общая скошенная площадь" },
+      "estimated_area_mowed_today": { "name": "Расчётная площадь, скошенная сегодня" },
+      "estimated_daily_progress": { "name": "Расчётный прогресс за день" },
+      "lawn_area": { "name": "Площадь газона" },
+      "mowing_efficiency": { "name": "Эффективность стрижки" },
+      "rtk_map": { "name": "Карта RTK" },
+      "rtk_trail_points": { "name": "Точки маршрута RTK" },
+      "rtk_address": { "name": "Адрес RTK" },
+      "rain_remaining": { "name": "Осталось до окончания дождя" },
+      "battery_voltage": { "name": "Напряжение батареи" },
+      "battery_temperature": { "name": "Температура батареи" },
+      "battery_cycles_total": { "name": "Всего циклов батареи" },
+      "battery_cycles_since_reset": { "name": "Циклов батареи с последнего сброса" },
+      "battery_cycles_reset_at": { "name": "Время сброса циклов батареи" },
+      "blade_runtime_total": { "name": "Общее время работы ножей" },
+      "blade_runtime_current": { "name": "Текущее время работы ножей" },
+      "blade_runtime_reset_at": { "name": "Время сброса счётчика ножей" },
+      "mower_runtime_total": { "name": "Общее время работы косилки" },
+      "mower_home_time_total": { "name": "Общее время на базе" },
+      "mower_charging_time_total": { "name": "Общее время зарядки" },
+      "mower_error_time_total": { "name": "Общее время в ошибке" },
+      "maintenance_status": {
+        "name": "Статус обслуживания",
+        "state": {
+          "ok": "Норма",
+          "blade_service_due": "Требуется замена ножей",
+          "battery_service_due": "Требуется обслуживание батареи"
+        }
+      },
+      "pitch": { "name": "Тангаж" },
+      "roll": { "name": "Крен" },
+      "yaw": { "name": "Рыскание" },
+      "last_update": { "name": "Последнее обновление" },
+      "last_update_age": { "name": "Время с последнего обновления" },
+      "cloud_statistics_updated": { "name": "Статистика облака обновлена" },
+      "mowing_time_today": { "name": "Время стрижки сегодня" }
+    },
+    "binary_sensor": {
+      "online": { "name": "В сети" },
+      "iot_registered": { "name": "Зарегистрирован в IoT" },
+      "mqtt_registered": { "name": "Зарегистрирован в MQTT" },
+      "mqtt_connected": { "name": "Подключён к MQTT" },
+      "rain_triggered": { "name": "Сработал датчик дождя" },
+      "robot_lifted": { "name": "Робот поднят" },
+      "off_limits_enabled": { "name": "Зона ограничения включена" },
+      "acs_enabled": { "name": "ACS включена" },
+      "pause_mode_enabled": { "name": "Режим паузы включён" }
+    },
+    "switch": {
+      "firmware_auto_upgrade": { "name": "Автообновление прошивки" },
+      "lock": { "name": "Блокировка" },
+      "native_schedule": { "name": "Встроенное расписание" },
+      "smart_edge_cut": { "name": "Умная стрижка кромки" },
+      "save_hedgehogs": { "name": "Защита ежей" },
+      "party_mode": { "name": "Режим вечеринки" },
+      "one_time_mowing_edge_cut": { "name": "Разовая стрижка кромки" },
+      "off_limits": { "name": "Зона ограничения" },
+      "acs": { "name": "ACS" }
+    },
+    "button": {
+      "refresh": { "name": "Обновить" },
+      "reset_blade_counter": { "name": "Сбросить счётчик ножей" },
+      "reset_battery_cycle_counter": { "name": "Сбросить циклы батареи" },
+      "start_edge_cut": { "name": "Начать стрижку кромки" },
+      "start_one_time_mowing": { "name": "Начать разовую стрижку" },
+      "restart": { "name": "Перезапустить косилку" }
+    },
+    "number": {
+      "rain_delay_minutes": { "name": "Задержка из-за дождя" },
+      "time_extension": { "name": "Продление времени" },
+      "lawn_area": { "name": "Площадь газона" },
+      "lawn_perimeter": { "name": "Периметр газона" },
+      "one_time_mowing_runtime": { "name": "Длительность разовой стрижки" },
+      "cutting_height": { "name": "Высота стрижки" },
+      "torque": { "name": "Крутящий момент" }
+    },
+    "select": {
+      "one_time_mowing_zones": { "name": "Зона стрижки" },
+      "border_distance": {
+        "name": "Расстояние от границы",
+        "state": {
+          "50": "50 мм",
+          "100": "100 мм",
+          "150": "150 мм",
+          "200": "200 мм"
+        }
+      }
+    },
+    "update": {
+      "firmware": { "name": "Прошивка" }
+    },
+    "camera": {
+      "rtk_map_camera": { "name": "Карта RTK" }
+    },
+    "calendar": {
+      "schedule": { "name": "Расписание стрижки" }
+    },
+    "device_tracker": {
+      "rtk_position": { "name": "Позиция RTK" }
+    }
+  },
+  "issues": {
+    "blade_service_due": {
+      "title": "Требуется замена ножей ({mower_name})",
+      "description": "Ножи косилки {mower_name} наработали {hours} ч с момента последнего сброса (порог: {threshold_hours} ч). Замените или переверните ножи, затем нажмите кнопку «Сбросить счётчик ножей» на странице устройства косилки."
+    },
+    "battery_service_due": {
+      "title": "Рекомендуется обслуживание батареи ({mower_name})",
+      "description": "Косилка {mower_name} прошла {cycles} циклов зарядки с момента последнего сброса (порог: {threshold_cycles}). Проверьте состояние батареи, затем нажмите кнопку «Сбросить циклы батареи» на странице устройства косилки."
+    }
+  }
+}
