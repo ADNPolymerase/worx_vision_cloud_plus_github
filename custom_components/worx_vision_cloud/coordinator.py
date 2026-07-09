@@ -1101,14 +1101,6 @@ class WorxVisionCoordinator(DataUpdateCoordinator[dict[str, DeviceHandler]]):
         until the next mow.
         """
         live_value = rtk_map_id(device)
-        raw_cfg = getattr(device, "raw_cfg", None)
-        _LOGGER.debug(
-            "RTK map id check for %s: live=%s raw_cfg_keys=%s rtk_block=%s",
-            serial_number,
-            live_value,
-            sorted(raw_cfg.keys()) if isinstance(raw_cfg, dict) else raw_cfg,
-            raw_cfg.get("rtk") if isinstance(raw_cfg, dict) else None,
-        )
         if live_value is not None and self._rtk_map_ids.get(serial_number) != str(
             live_value
         ):
