@@ -77,6 +77,15 @@ See [docs/entities.md](docs/entities.md) for a more detailed list.
 
 For compatible Vision Cloud / RTK mowers, a camera entity renders the mowing boundary, excluded areas, station and the current day's mowing trail as SVG from the private Worx map endpoint — not a video stream, it updates when new data arrives. The trail covers the full local day (like the Worx app) rather than a fixed time window: it resets at local midnight, is persisted so a Home Assistant restart mid-day doesn't lose it, and keeps showing the last known map if a fetch briefly fails.
 
+### Recovering the map after upgrading from an older version
+
+*Versions before 1.6.3 didn't cache the RTK map id, so if Worx stops sending it for a while (observed on some accounts, even during active mowing with a good GPS fix) the map camera and the lawn-area/progress sensors could go blank until it came back on its own. Since 1.6.3 the last known id is cached and persisted automatically, but on your very first restart after upgrading that cache starts empty. If the map camera or those sensors are unavailable right after upgrading:*
+
+1. *Open the **RTK map** sensor's history (its state is the map id, a UUID) and find the last value it held before it went `unknown`.*
+2. *Call the `worx_vision_cloud.set_rtk_map_id` service, picking your mower's `lawn_mower` entity and pasting that value as `map_id`.*
+
+*The camera and the dependent sensors (lawn area, daily/remaining/estimated progress) update immediately, and from then on the coordinator keeps that cache fresh and persisted on its own.*
+
 An `RTK address` sensor (disabled by default) can reverse-geocode the mower's rounded position with OpenStreetMap Nominatim, cached 24h. It's opt-in because RTK coordinates can reveal a home or garden location.
 
 RTK maps and address lookups can contain precise garden geometry and coordinates — don't publish debug dumps, storage files, tokens or screenshots showing exact locations. See [SECURITY.md](SECURITY.md).
