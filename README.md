@@ -26,7 +26,7 @@ This integration is built on top of the community `pyworxcloud` library and adds
 - Schedule sensor and calendar, next mowing time, RTK map camera with mowed-area trail, RTK robot position and reverse-geocoded address (opt-in).
 - Battery, status, error, connectivity, maintenance and mowing-readiness sensors, with Home Assistant Repairs alerts for blade/battery service and a restart button.
 - Download diagnostics with automatic redaction of coordinates, addresses and identifiers.
-- Translated into 10 languages (English, Polish, French, German, Dutch, Spanish, Italian, Swedish, Norwegian, Danish), including entity states, schedule and calendar.
+- Translated into 11 languages (English, Polish, French, German, Dutch, Spanish, Italian, Swedish, Norwegian, Danish, Russian), including entity states, schedule and calendar.
 
 ## Installation With HACS
 

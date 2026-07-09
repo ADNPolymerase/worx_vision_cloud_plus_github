@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Added Russian translation.
 - Fixed the RTK map camera and sensor going unavailable/unknown again after
   several hours, even without any restart. The 1.6.2 fix compared the
   coordinator's "previous" device object against the newly pushed one to
