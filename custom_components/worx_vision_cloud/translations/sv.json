@@ -30,8 +30,8 @@
         "state": {
           "dock": "Laddstation",
           "radiolink_adapter": "RadioLink-adapter",
-          "disconnected": "FrÃ¥nkopplad",
-          "unknown": "OkÃ¤nd"
+          "disconnected": "Frånkopplad",
+          "unknown": "Okänd"
         }
       },
       "battery_percent": {

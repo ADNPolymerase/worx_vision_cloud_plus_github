@@ -30,7 +30,7 @@
         "state": {
           "dock": "Station de charge",
           "radiolink_adapter": "Adaptateur RadioLink",
-          "disconnected": "DÃ©connectÃ©",
+          "disconnected": "Déconnecté",
           "unknown": "Inconnu"
         }
       },

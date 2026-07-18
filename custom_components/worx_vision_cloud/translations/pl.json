@@ -26,11 +26,11 @@
   "entity": {
     "sensor": {
       "nearlink_connection": {
-        "name": "PoÅ‚Ä…czenie NearLink",
+        "name": "Połączenie NearLink",
         "state": {
-          "dock": "Stacja dokujÄ…ca",
+          "dock": "Stacja dokująca",
           "radiolink_adapter": "Adapter RadioLink",
-          "disconnected": "RozÅ‚Ä…czono",
+          "disconnected": "Rozłączono",
           "unknown": "Nieznane"
         }
       },

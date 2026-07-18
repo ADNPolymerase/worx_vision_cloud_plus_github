@@ -26,12 +26,12 @@
   "entity": {
     "sensor": {
       "nearlink_connection": {
-        "name": "Ð¡Ð¾ÐµÐ´Ð¸Ð½ÐµÐ½Ð¸Ðµ NearLink",
+        "name": "Соединение NearLink",
         "state": {
-          "dock": "Ð—Ð°Ñ€ÑÐ´Ð½Ð°Ñ ÑÑ‚Ð°Ð½Ñ†Ð¸Ñ",
-          "radiolink_adapter": "ÐÐ´Ð°Ð¿Ñ‚ÐµÑ€ RadioLink",
-          "disconnected": "ÐžÑ‚ÐºÐ»ÑŽÑ‡ÐµÐ½Ð¾",
-          "unknown": "ÐÐµÐ¸Ð·Ð²ÐµÑÑ‚Ð½Ð¾"
+          "dock": "Зарядная станция",
+          "radiolink_adapter": "Адаптер RadioLink",
+          "disconnected": "Отключено",
+          "unknown": "Неизвестно"
         }
       },
       "battery_percent": { "name": "Заряд батареи" },

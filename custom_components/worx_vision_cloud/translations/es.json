@@ -26,7 +26,7 @@
   "entity": {
     "sensor": {
       "nearlink_connection": {
-        "name": "ConexiÃ³n NearLink",
+        "name": "Conexión NearLink",
         "state": {
           "dock": "Base de carga",
           "radiolink_adapter": "Adaptador RadioLink",
