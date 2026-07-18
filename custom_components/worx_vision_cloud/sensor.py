@@ -52,6 +52,12 @@ from .helpers import (
     schedule_attributes,
     schedule_summary,
 )
+from .nearlink import (
+    NEARLINK_CONNECTION_OPTIONS,
+    has_nearlink_module,
+    nearlink_attributes,
+    nearlink_connection_state,
+)
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -666,6 +672,16 @@ STANDARD_SENSORS: tuple[WorxSensorDescription, ...] = (
         value_fn=lambda d: getattr(d, "rssi", None),
     ),
     WorxSensorDescription(
+        key="nearlink_connection",
+        translation_key="nearlink_connection",
+        icon="mdi:access-point-network",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        device_class=SensorDeviceClass.ENUM,
+        options=NEARLINK_CONNECTION_OPTIONS,
+        value_fn=nearlink_connection_state,
+        attrs_fn=nearlink_attributes,
+    ),
+    WorxSensorDescription(
         key="zone_current",
         translation_key="zone_current",
         icon="mdi:map-marker-path",
@@ -952,9 +968,11 @@ async def async_setup_entry(
     known_raw: set[str] = set()
 
     for serial_number in coordinator.data:
+        device = coordinator.data[serial_number]
         entities.extend(
             WorxVisionSensor(coordinator, entry, serial_number, description)
             for description in STANDARD_SENSORS
+            if description.key != "nearlink_connection" or has_nearlink_module(device)
         )
         entities.append(WorxVisionAddressSensor(coordinator, entry, serial_number))
         entities.append(WorxScheduleSensor(coordinator, entry, serial_number))

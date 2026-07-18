@@ -25,6 +25,15 @@
   },
   "entity": {
     "sensor": {
+      "nearlink_connection": {
+        "name": "NearLink-forbindelse",
+        "state": {
+          "dock": "Basestation",
+          "radiolink_adapter": "RadioLink-adapter",
+          "disconnected": "Frakoblet",
+          "unknown": "Ukendt"
+        }
+      },
       "battery_percent": {
         "name": "Batteri"
       },

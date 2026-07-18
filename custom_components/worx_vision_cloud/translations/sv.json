@@ -25,6 +25,15 @@
   },
   "entity": {
     "sensor": {
+      "nearlink_connection": {
+        "name": "NearLink-anslutning",
+        "state": {
+          "dock": "Laddstation",
+          "radiolink_adapter": "RadioLink-adapter",
+          "disconnected": "Frånkopplad",
+          "unknown": "Okänd"
+        }
+      },
       "battery_percent": {
         "name": "Batteri"
       },

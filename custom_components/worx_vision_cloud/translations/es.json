@@ -25,6 +25,15 @@
   },
   "entity": {
     "sensor": {
+      "nearlink_connection": {
+        "name": "Conexión NearLink",
+        "state": {
+          "dock": "Base de carga",
+          "radiolink_adapter": "Adaptador RadioLink",
+          "disconnected": "Desconectado",
+          "unknown": "Desconocido"
+        }
+      },
       "battery_percent": {
         "name": "Batería"
       },

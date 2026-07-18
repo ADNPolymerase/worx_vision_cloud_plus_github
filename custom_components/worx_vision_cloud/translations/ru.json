@@ -25,6 +25,15 @@
   },
   "entity": {
     "sensor": {
+      "nearlink_connection": {
+        "name": "Соединение NearLink",
+        "state": {
+          "dock": "Зарядная станция",
+          "radiolink_adapter": "Адаптер RadioLink",
+          "disconnected": "Отключено",
+          "unknown": "Неизвестно"
+        }
+      },
       "battery_percent": { "name": "Заряд батареи" },
       "status": {
         "name": "Статус",
